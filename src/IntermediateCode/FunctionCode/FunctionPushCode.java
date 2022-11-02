@@ -43,12 +43,20 @@ public class FunctionPushCode extends IntermediateCode {
                 mipsVisitor.addMipsCode(
                     MipsCode.generateSW(reg, String.valueOf(-(offset * 4 + 4)), "$sp"));
             } else {
-                int offset = varAddressOffset.getVarOffset(target.getName());
-                String tempReg = registerPool.getTempReg(true, varAddressOffset, mipsVisitor);
-                mipsVisitor.addMipsCode(
-                    MipsCode.generateADDIU(tempReg, "$sp", addressMul4(String.valueOf(offset))));
-                mipsVisitor.addMipsCode(
-                    MipsCode.generateSW(tempReg, String.valueOf(-(offset * 4 + 4)), "$sp"));
+                if (target.getName().startsWith("t@")) {
+                    String reg =
+                        registerPool.allocateRegToVarLoad(target.getName(), varAddressOffset,
+                            mipsVisitor);
+                    mipsVisitor.addMipsCode(
+                        MipsCode.generateSW(reg, String.valueOf(-(offset * 4 + 4)), "$sp"));
+                } else {
+                    int arrayOffset = varAddressOffset.getVarOffset(target.getName());
+                    String tempReg = registerPool.getTempReg(true, varAddressOffset, mipsVisitor);
+                    mipsVisitor.addMipsCode(
+                        MipsCode.generateADDIU(tempReg, "$sp", String.valueOf(arrayOffset)));
+                    mipsVisitor.addMipsCode(
+                        MipsCode.generateSW(tempReg, String.valueOf(-(offset * 4 + 4)), "$sp"));
+                }
             }
         }
 

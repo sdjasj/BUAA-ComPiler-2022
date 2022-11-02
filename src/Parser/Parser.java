@@ -560,6 +560,7 @@ public class Parser {
             nextToken();
         }
         StmtNode ifStmt = parseStmtNode();
+        StmtNode elseStmt = null;
         if (getToken().getTokenType() == TokenType.ELSETK) {
 
             if (outputParser) {
@@ -567,11 +568,9 @@ public class Parser {
             } //输出词法成分
 
             nextToken();
-            StmtNode elseStmt = parseStmtNode();
-            return StmtNode.generateIfElse(condNode, ifStmt, elseStmt);
-        } else {
-            return StmtNode.generateIf(condNode, ifStmt);
+            elseStmt = parseStmtNode();
         }
+        return StmtNode.generateIf(condNode, ifStmt, elseStmt);
     }
 
     //| 'while' '(' Cond ')' Stmt

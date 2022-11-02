@@ -103,6 +103,23 @@ public class MipsCode {
         return mipsCode;
     }
 
+    public static MipsCode generateLable(String target) {
+        MipsCode mipsCode = new MipsCode("lable", target, null, null);
+        return mipsCode;
+    }
+
+    public static MipsCode generateJ(String target) {
+        MipsCode mipsCode = new MipsCode("j", target, null, null);
+        return mipsCode;
+    }
+
+    public static MipsCode generateCompareCode(String target, String source1, String source2,
+                                               String codeName) {
+        MipsCode mipsCode = new MipsCode(codeName, target, source1, source2);
+        return mipsCode;
+    }
+
+
 
     public void output() {
         if (codeName.equals("lw")) {
@@ -114,7 +131,7 @@ public class MipsCode {
         } else if (codeName.equals("addiu")) {
             System.out.println("addiu " + target + ", " + source1 + ", " + source2);
         } else if (codeName.equals("tag")) {
-            System.out.println(target + ": ");
+            System.out.println("\n\n\n\n" + target + ": ");
         } else if (codeName.equals("li")) {
             System.out.println("li " + target + ", " + source1);
         } else if (codeName.equals("move")) {
@@ -141,6 +158,10 @@ public class MipsCode {
             System.out.println("jr " + target);
         } else if (codeName.equals("comment")) {
             System.out.println("# " + target);
+        } else if (codeName.equals("lable")) {
+            System.out.println(target + ":");
+        } else if (codeName.equals("j")) {
+            System.out.println("j " + target);
         }
     }
 }

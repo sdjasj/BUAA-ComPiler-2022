@@ -51,6 +51,7 @@ public class MemoryCode extends IntermediateCode {
             } else if (op == Operator.STORE) {
                 mipsVisitor.addMipsCode(MipsCode.generateSW(targetReg, source1.getName(), source2Reg));
             }
+            return;
         } else {
             String tempReg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor);
             if (varAddressOffset.isParam(source1.getName())) {
@@ -60,7 +61,7 @@ public class MemoryCode extends IntermediateCode {
             } else {
                 mipsVisitor.addMipsCode(MipsCode.generateADDIU(tempReg, "$sp",
                     String.valueOf(varAddressOffset.getArrayOffset(source1.getName(), 0))));
-                mipsVisitor.addMipsCode(MipsCode.generateADDU(source2Reg, "$sp", tempReg));
+                mipsVisitor.addMipsCode(MipsCode.generateADDU(source2Reg, source2Reg, tempReg));
             }
 
 

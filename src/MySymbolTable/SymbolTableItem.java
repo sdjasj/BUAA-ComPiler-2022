@@ -129,13 +129,14 @@ public class SymbolTableItem implements Serializable {
     }
 
     //得到数组第n + 1维到最后的长度, n从1开始
+    //constDimensionLength -> 如果第一维缺省则constDimensionLength[0] = 0
     public int getDimensionLength(int n) {
-        if (n > constDimensionLength.size()) {
+        if (n >= constDimensionLength.size()) {
             return 0;
         }
-        int ans = 0;
+        int ans = 1;
         for (int i = n; i < constDimensionLength.size(); i++) {
-            ans += constDimensionLength.get(i) * (constDimensionLength.size() - n);
+            ans *= constDimensionLength.get(i);
         }
         return ans;
     }

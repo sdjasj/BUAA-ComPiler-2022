@@ -30,7 +30,6 @@ public class ConstDefNode extends ParserNode {
         this.bTypeNode = bTypeNode;
     }
 
-    @Override
     public void generateIntermediate(IntermediateVisitor intermediateVisitor) {
         if (blockDepth == 0) {
             //global

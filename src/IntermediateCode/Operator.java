@@ -10,6 +10,24 @@ public enum Operator {
     NEG,
     NOT,
 
+    BEQ,
+    BNE,
+    BGE,
+    BLE,
+    BLT,
+    BGT,
+    BEQZ,
+    BNEZ,
+    JUMP,
+
+
+    GT,
+    GTE,
+    LT,
+    LTE,
+    SEQ,
+    SNE,
+
     ASSIGN,
     DECL,
 

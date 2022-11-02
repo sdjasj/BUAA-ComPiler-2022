@@ -18,7 +18,6 @@ public class CompUnitNode extends ParserNode {
         this.mainFuncDefNode = mainFuncDefNode;
     }
 
-    @Override
     public void generateIntermediate(IntermediateVisitor intermediateVisitor) {
         for (DeclNode declNode : declNodes) {
             declNode.generateIntermediate(intermediateVisitor);

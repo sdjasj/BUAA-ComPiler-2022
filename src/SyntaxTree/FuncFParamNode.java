@@ -22,7 +22,6 @@ public class FuncFParamNode extends ParserNode {
         this.dimensionLength = dimensionLength;
     }
 
-    @Override
     public void generateIntermediate(IntermediateVisitor intermediateVisitor) {
         String name = TCode.reName(ident.getValue(), blockDepth);
         FunctionParam functionParam =

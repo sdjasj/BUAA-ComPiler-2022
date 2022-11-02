@@ -1,5 +1,8 @@
 package SyntaxTree;
 
+import IntermediateCode.AllCode.LableCode;
+import IntermediateCode.IntermediateVisitor;
+import IntermediateCode.TCode;
 import Lexer.TokenType;
 import MySymbolTable.SymbolTable;
 
@@ -17,5 +20,24 @@ public class LAndExpNode extends ParserNode {
         this.lAndExpNode = lAndExpNode;
         this.op = op;
         this.eqExpNode = eqExpNode;
+    }
+
+    public void generateIntermediate(IntermediateVisitor intermediateVisitor, String trueLabel,
+                                     String falseLabel) {
+        if (lAndExpNode != null) {
+            String label;
+            if (falseLabel != null) {
+                label = falseLabel;
+            } else {
+                label = TCode.genNewLable();
+            }
+            lAndExpNode.generateIntermediate(intermediateVisitor, null, label);
+            eqExpNode.generateIntermediate(intermediateVisitor, trueLabel, falseLabel);
+            if (falseLabel == null) {
+                intermediateVisitor.addIntermediateCode(new LableCode(label));
+            }
+        } else {
+            eqExpNode.generateIntermediate(intermediateVisitor, trueLabel, falseLabel);
+        }
     }
 }

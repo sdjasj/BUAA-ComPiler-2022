@@ -3,6 +3,8 @@ package SyntaxTree;
 
 import IntermediateCode.AllCode.AssignCode;
 import IntermediateCode.AllCode.InputCode;
+import IntermediateCode.AllCode.JumpCode;
+import IntermediateCode.AllCode.LableCode;
 import IntermediateCode.AllCode.MemoryCode;
 import IntermediateCode.AllCode.OutputCode;
 import IntermediateCode.FunctionCode.ExitCode;
@@ -30,7 +32,7 @@ import java.util.ArrayList;
 // | 'printf''('FormatString{','Exp}')'';' // 1.有Exp 2.无Exp
 public class StmtNode extends ParserNode {
     public static final int LVAL_EXP = 1, EXP_SEMICN = 2, BLOCK = 3, IF = 4, WHILE = 5, BREAK = 6,
-        CONTINUE = 7, RETRUN = 8, LVAL_GETINT = 9, PRINTF = 10, IF_ELSE = 11;
+        CONTINUE = 7, RETRUN = 8, LVAL_GETINT = 9, PRINTF = 10;
     private int stmtType;
     private LValNode lValNode;
     private ExpNode expNode;
@@ -78,14 +80,9 @@ public class StmtNode extends ParserNode {
             null, null);
     }
 
-    public static StmtNode generateIf(CondNode condNode, StmtNode stmtNode) {
-        return new StmtNode(StmtNode.IF, null, null, null, condNode, stmtNode, null, null, null,
+    public static StmtNode generateIf(CondNode condNode, StmtNode stmtNode, StmtNode elseStmtNode) {
+        return new StmtNode(StmtNode.IF, null, null, null, condNode, stmtNode, elseStmtNode, null, null,
             null, null);
-    }
-
-    public static StmtNode generateIfElse(CondNode condNode, StmtNode ifStmtNode, StmtNode elseStmtNode) {
-        return new StmtNode(StmtNode.IF_ELSE, null, null, null, condNode, ifStmtNode, elseStmtNode,
-            null, null, null, null);
     }
 
     public static StmtNode generateWhile(CondNode condNode, StmtNode stmtNode) {
@@ -123,12 +120,13 @@ public class StmtNode extends ParserNode {
         return stmtType == RETRUN;
     }
 
-    @Override
-    public void generateIntermediate(IntermediateVisitor intermediateVisitor) {
+    public void generateIntermediate(IntermediateVisitor intermediateVisitor,
+                                     Pair<String, String> loop) {
         if (stmtType == LVAL_EXP) {
             //语句 Stmt → LVal '=' Exp ';'
             Operand src1 = expNode.generateMidCodeAndReturnTempVar(intermediateVisitor);
-            Pair<Operand, Operand> target = lValNode.generateMidCodeAndUseAsLeft(intermediateVisitor);
+            Pair<Operand, Operand> target =
+                lValNode.generateMidCodeAndUseAsLeft(intermediateVisitor);
             if (target.getFirst().getOperandType() == Operand.OperandType.ADDRESS) {
                 //数组作为左值,需要访存
                 MemoryCode memoryCode =
@@ -146,7 +144,7 @@ public class StmtNode extends ParserNode {
             //exp;
             expNode.generateMidCodeAndReturnTempVar(intermediateVisitor);
         } else if (stmtType == BLOCK) {
-            blockNode.generateIntermediate(intermediateVisitor);
+            blockNode.generateIntermediate(intermediateVisitor, loop);
         } else if (stmtType == RETRUN) {
             if (intermediateVisitor.isMainFuncNow()) {
                 ExitCode exitCode = new ExitCode();
@@ -200,6 +198,48 @@ public class StmtNode extends ParserNode {
                     intermediateVisitor.addIntermediateCode(outputCode);
                 }
             }
+        } else if (stmtType == IF) {
+            String falseLable = TCode.genNewLable();
+            String elseEndLable = null;
+            if (elseStmtNode != null) {
+                elseEndLable = TCode.genNewLable();
+            }
+            //cond
+            ifCondNode.generateIntermediate(intermediateVisitor, null, falseLable);
+            //stmt
+            ifStmtNode.generateIntermediate(intermediateVisitor, loop);
+            if (elseStmtNode != null) {
+                intermediateVisitor.addIntermediateCode(
+                    new JumpCode(new Operand(elseEndLable, Operand.OperandType.ADDRESS),
+                        Operator.JUMP));
+            }
+            //falseLable
+            intermediateVisitor.addIntermediateCode(new LableCode(falseLable));
+            //elseStmt
+            if (elseStmtNode != null) {
+                elseStmtNode.generateIntermediate(intermediateVisitor, loop);
+                intermediateVisitor.addIntermediateCode(new LableCode(elseEndLable));
+            }
+        } else if (stmtType == WHILE) {
+            String falseLabel = TCode.genNewLable();
+            String beginLabel = TCode.genNewLable();
+            intermediateVisitor.addIntermediateCode(new LableCode(beginLabel));
+            whileCondNode.generateIntermediate(intermediateVisitor, null, falseLabel);
+            whileStmtNode.generateIntermediate(intermediateVisitor,
+                new Pair<>(beginLabel, falseLabel));
+            intermediateVisitor.addIntermediateCode(
+                new JumpCode(new Operand(beginLabel, Operand.OperandType.ADDRESS), Operator.JUMP));
+            intermediateVisitor.addIntermediateCode(new LableCode(falseLabel));
+        } else if (stmtType == CONTINUE) {
+            String beginLoopLabel = loop.getFirst();
+            intermediateVisitor.addIntermediateCode(
+                new JumpCode(new Operand(beginLoopLabel, Operand.OperandType.ADDRESS),
+                    Operator.JUMP));
+        } else if (stmtType == BREAK) {
+            String endLoopLabel = loop.getSecond();
+            intermediateVisitor.addIntermediateCode(
+                new JumpCode(new Operand(endLoopLabel, Operand.OperandType.ADDRESS),
+                    Operator.JUMP));
         }
 
     }

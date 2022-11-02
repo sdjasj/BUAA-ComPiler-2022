@@ -24,7 +24,6 @@ public class DeclNode extends ParserNode {
         return constDeclNode != null;
     }
 
-    @Override
     public void generateIntermediate(IntermediateVisitor intermediateVisitor) {
         if (isConst()) {
             constDeclNode.generateIntermediate(intermediateVisitor);

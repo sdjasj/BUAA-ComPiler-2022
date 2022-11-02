@@ -5,6 +5,7 @@ import java.util.HashSet;
 
 import IntermediateCode.AllCode.AssignCode;
 import IntermediateCode.AllCode.CalculateCode;
+import IntermediateCode.AllCode.CompareCode;
 import IntermediateCode.AllCode.DeclCode;
 import IntermediateCode.AllCode.InputCode;
 import IntermediateCode.AllCode.MemoryCode;
@@ -70,8 +71,8 @@ public class Function {
             if (intermediateCode instanceof CalculateCode || intermediateCode instanceof InputCode
                 || intermediateCode instanceof OutputCode ||
                 intermediateCode instanceof SingleCalculateCode ||
-                intermediateCode instanceof AssignCode || intermediateCode instanceof MemoryCode) {
-
+                intermediateCode instanceof AssignCode || intermediateCode instanceof MemoryCode ||
+                intermediateCode instanceof CompareCode) {
                 //临时变量
                 String name = intermediateCode.getTarget().getName();
                 if (name.startsWith("t@") && !tempVarSet.contains(name)) {

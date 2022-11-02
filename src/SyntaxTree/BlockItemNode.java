@@ -2,6 +2,7 @@ package SyntaxTree;
 
 import IntermediateCode.IntermediateVisitor;
 import MySymbolTable.SymbolTable;
+import Tool.Pair;
 
 public class BlockItemNode extends ParserNode {
     private DeclNode declNode;
@@ -30,12 +31,11 @@ public class BlockItemNode extends ParserNode {
         return stmtNode.intFuncHasReturnInTheLastStmt();
     }
 
-    @Override
-    public void generateIntermediate(IntermediateVisitor intermediateVisitor) {
+    public void generateIntermediate(IntermediateVisitor intermediateVisitor, Pair<String, String> loop) {
         if (isDecl()) {
             declNode.generateIntermediate(intermediateVisitor);
         } else {
-            stmtNode.generateIntermediate(intermediateVisitor);
+            stmtNode.generateIntermediate(intermediateVisitor, loop);
         }
     }
 }

@@ -4,6 +4,7 @@ import IntermediateCode.IntermediateCode;
 import IntermediateCode.Operator;
 import IntermediateCode.Operand;
 import MipsCode.MipsCode.MipsCode;
+import MipsCode.MipsCode.MipsCompareCode;
 import MipsCode.MipsVisitor;
 import MipsCode.RegisterPool;
 import MipsCode.VarAddressOffset;
@@ -35,6 +36,8 @@ public class SingleCalculateCode extends IntermediateCode {
             mipsVisitor.addMipsCode(MipsCode.generateADDU(targetReg, "$0", src1Reg));
         } else if (op == Operator.NEG) {
             mipsVisitor.addMipsCode(MipsCode.generateSUBU(targetReg, "$0", src1Reg));
+        } else if (op == Operator.NOT) {
+            mipsVisitor.addMipsCode(new MipsCompareCode("seq", targetReg, src1Reg, "$0"));
         }
     }
 

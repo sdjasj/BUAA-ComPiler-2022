@@ -17,8 +17,6 @@ public class ParserNode {
         this.blockDepth = blockDepth;
     }
 
-    public void generateIntermediate(IntermediateVisitor intermediateVisitor) {}
-
     public void setSymbolTable(SymbolTable symbolTable) {
         this.RecordSymbolTable = symbolTable;
     }

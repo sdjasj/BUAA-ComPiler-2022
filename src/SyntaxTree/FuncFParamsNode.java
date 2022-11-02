@@ -23,7 +23,6 @@ public class FuncFParamsNode extends ParserNode {
         return funcFParams.size();
     }
 
-    @Override
     public void generateIntermediate(IntermediateVisitor intermediateVisitor) {
         for (FuncFParamNode funcFParam : funcFParams) {
             funcFParam.generateIntermediate(intermediateVisitor);

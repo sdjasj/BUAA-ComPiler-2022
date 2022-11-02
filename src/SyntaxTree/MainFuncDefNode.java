@@ -16,12 +16,11 @@ public class MainFuncDefNode extends ParserNode {
         this.blockNode = blockNode;
     }
 
-    @Override
     public void generateIntermediate(IntermediateVisitor intermediateVisitor) {
         intermediateVisitor.changeNewFunction(true, "main");
         FunctionCode functionCode = new FunctionCode(new Operand("main", Operand.OperandType.ADDRESS));
         intermediateVisitor.addIntermediateCode(functionCode);
-        blockNode.generateIntermediate(intermediateVisitor);
+        blockNode.generateIntermediate(intermediateVisitor, null);
         FunctionEndCode functionEndCode =
             new FunctionEndCode(new Operand("main", Operand.OperandType.ADDRESS));
         intermediateVisitor.addIntermediateCode(functionEndCode);

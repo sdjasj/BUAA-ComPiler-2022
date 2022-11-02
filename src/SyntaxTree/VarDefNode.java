@@ -41,7 +41,6 @@ public class VarDefNode extends ParserNode {
         return initValNode != null;
     }
 
-    @Override
     public void generateIntermediate(IntermediateVisitor intermediateVisitor) {
         if (blockDepth == 0) {
             //global

@@ -3,6 +3,7 @@ package IntermediateCode;
 public class TCode {
     public static int cnt = 0;
     public static int cntStr = 0;
+    public static int cntLable = 0;
 
     public static String genNewT() {
         String target = "t@" + cnt;
@@ -18,5 +19,11 @@ public class TCode {
         String target = "str_" + cntStr;
         cntStr++;
         return target;
+    }
+
+    public static String genNewLable() {
+        String lable = "$lable_" + cntLable;
+        cntLable++;
+        return lable;
     }
 }

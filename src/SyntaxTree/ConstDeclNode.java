@@ -18,7 +18,6 @@ public class ConstDeclNode extends ParserNode {
         this.constDefNodes = constDefNodes;
     }
 
-    @Override
     public void generateIntermediate(IntermediateVisitor intermediateVisitor) {
         for (ConstDefNode constDefNode : constDefNodes) {
             constDefNode.setbTypeNode(bTypeNode);

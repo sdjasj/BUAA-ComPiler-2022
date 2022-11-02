@@ -1,5 +1,6 @@
 package SyntaxTree;
 
+import IntermediateCode.IntermediateVisitor;
 import MySymbolTable.SymbolTable;
 
 public class CondNode extends ParserNode {
@@ -7,5 +8,10 @@ public class CondNode extends ParserNode {
 
     public CondNode(LOrExpNode lOrExpNode) {
         this.lOrExpNode = lOrExpNode;
+    }
+
+    public void generateIntermediate(IntermediateVisitor intermediateVisitor, String trueLable,
+                                     String falseLable) {
+        lOrExpNode.generateIntermediate(intermediateVisitor, trueLable, falseLable);
     }
 }

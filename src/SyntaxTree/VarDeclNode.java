@@ -21,7 +21,6 @@ public class VarDeclNode extends ParserNode {
         }
     }
 
-    @Override
     public void generateIntermediate(IntermediateVisitor intermediateVisitor) {
         for (VarDefNode varDefNode : varDefNodes) {
             varDefNode.setbTypeNode(bTypeNode);

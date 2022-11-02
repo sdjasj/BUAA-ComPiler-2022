@@ -2,6 +2,7 @@ package SyntaxTree;
 
 import IntermediateCode.IntermediateVisitor;
 import MySymbolTable.SymbolTable;
+import Tool.Pair;
 
 import java.util.ArrayList;
 
@@ -25,10 +26,10 @@ public class BlockNode extends ParserNode {
         return blockItemNodes.get(blockItemNodes.size() - 1).intFuncHasReturnInTheLastStmt();
     }
 
-    @Override
-    public void generateIntermediate(IntermediateVisitor intermediateVisitor) {
+    public void generateIntermediate(IntermediateVisitor intermediateVisitor,
+                                     Pair<String, String> loop) {
         for (BlockItemNode blockItemNode : blockItemNodes) {
-            blockItemNode.generateIntermediate(intermediateVisitor);
+            blockItemNode.generateIntermediate(intermediateVisitor, loop);
         }
     }
 }

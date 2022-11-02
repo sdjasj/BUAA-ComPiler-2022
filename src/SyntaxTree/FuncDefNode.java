@@ -22,7 +22,6 @@ public class FuncDefNode extends ParserNode {
         this.block = block;
     }
 
-    @Override
     public void generateIntermediate(IntermediateVisitor intermediateVisitor) {
         intermediateVisitor.changeNewFunction(false, ident.getValue());
         FunctionCode functionCode =
@@ -31,7 +30,7 @@ public class FuncDefNode extends ParserNode {
         if (funcFParams != null) {
             funcFParams.generateIntermediate(intermediateVisitor);
         }
-        block.generateIntermediate(intermediateVisitor);
+        block.generateIntermediate(intermediateVisitor, null);
         if (funcType.getFuncType() == TokenType.VOIDTK) {
             intermediateVisitor.addIntermediateCode(new FunctionReturnCode());
         }
