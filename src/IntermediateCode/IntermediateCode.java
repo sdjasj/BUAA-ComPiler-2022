@@ -10,6 +10,7 @@ public class IntermediateCode {
     protected Operand source1;
     protected Operand source2;
     protected Operator op;
+    protected boolean isBasicBlockBegin;
 
     public IntermediateCode(Operand target, Operand source1, Operand source2, Operator op) {
         this.target = target;
@@ -36,6 +37,14 @@ public class IntermediateCode {
 
     public void output() {
 
+    }
+
+    public void setBasicBlockBegin(boolean basicBlockBegin) {
+        this.isBasicBlockBegin = basicBlockBegin;
+    }
+
+    public boolean isBasicBlockBegin() {
+        return isBasicBlockBegin;
     }
 
     public String addressMul4(String addr) {

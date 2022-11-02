@@ -1,10 +1,9 @@
 package SyntaxTree;
 
-import IntermediateCode.AllCode.LableCode;
+import IntermediateCode.AllCode.LabelCode;
 import IntermediateCode.IntermediateVisitor;
 import IntermediateCode.TCode;
 import Lexer.TokenType;
-import MySymbolTable.SymbolTable;
 
 //LAndExp → EqExp | LAndExp '&&' EqExp
 public class LAndExpNode extends ParserNode {
@@ -34,7 +33,7 @@ public class LAndExpNode extends ParserNode {
             lAndExpNode.generateIntermediate(intermediateVisitor, null, label);
             eqExpNode.generateIntermediate(intermediateVisitor, trueLabel, falseLabel);
             if (falseLabel == null) {
-                intermediateVisitor.addIntermediateCode(new LableCode(label));
+                intermediateVisitor.addIntermediateCode(new LabelCode(label));
             }
         } else {
             eqExpNode.generateIntermediate(intermediateVisitor, trueLabel, falseLabel);

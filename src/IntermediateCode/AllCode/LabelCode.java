@@ -9,22 +9,26 @@ import MipsCode.RegisterPool;
 import MipsCode.VarAddressOffset;
 
 
-public class LableCode extends IntermediateCode {
-    private String lable;
+public class LabelCode extends IntermediateCode {
+    private String label;
 
-    public LableCode(String lable) {
+    public LabelCode(String label) {
         super(null, null, null, null);
-        this.lable = lable;
+        this.label = label;
+    }
+
+    public String getLabel() {
+        return label;
     }
 
     @Override
     public void output() {
-        System.out.println(lable + ":");
+        System.out.println(label + ":");
     }
 
     @Override
     public void toMips(MipsVisitor mipsVisitor, VarAddressOffset varAddressOffset,
                        RegisterPool registerPool) {
-        mipsVisitor.addMipsCode(MipsCode.generateLable(lable));
+        mipsVisitor.addMipsCode(MipsCode.generateLable(label));
     }
 }

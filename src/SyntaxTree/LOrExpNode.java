@@ -1,10 +1,9 @@
 package SyntaxTree;
 
-import IntermediateCode.AllCode.LableCode;
+import IntermediateCode.AllCode.LabelCode;
 import IntermediateCode.IntermediateVisitor;
 import IntermediateCode.TCode;
 import Lexer.TokenType;
-import MySymbolTable.SymbolTable;
 
 public class LOrExpNode extends ParserNode {
     private LAndExpNode lAndExpNode;
@@ -33,7 +32,7 @@ public class LOrExpNode extends ParserNode {
             lOrExpNode.generateIntermediate(intermediateVisitor, label, null);
             lAndExpNode.generateIntermediate(intermediateVisitor, trueLabel, falseLabel);
             if (trueLabel == null) {
-                intermediateVisitor.addIntermediateCode(new LableCode(label));
+                intermediateVisitor.addIntermediateCode(new LabelCode(label));
             }
         } else {
             lAndExpNode.generateIntermediate(intermediateVisitor, trueLabel, falseLabel);

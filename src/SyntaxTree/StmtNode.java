@@ -4,7 +4,7 @@ package SyntaxTree;
 import IntermediateCode.AllCode.AssignCode;
 import IntermediateCode.AllCode.InputCode;
 import IntermediateCode.AllCode.JumpCode;
-import IntermediateCode.AllCode.LableCode;
+import IntermediateCode.AllCode.LabelCode;
 import IntermediateCode.AllCode.MemoryCode;
 import IntermediateCode.AllCode.OutputCode;
 import IntermediateCode.FunctionCode.ExitCode;
@@ -214,22 +214,22 @@ public class StmtNode extends ParserNode {
                         Operator.JUMP));
             }
             //falseLable
-            intermediateVisitor.addIntermediateCode(new LableCode(falseLable));
+            intermediateVisitor.addIntermediateCode(new LabelCode(falseLable));
             //elseStmt
             if (elseStmtNode != null) {
                 elseStmtNode.generateIntermediate(intermediateVisitor, loop);
-                intermediateVisitor.addIntermediateCode(new LableCode(elseEndLable));
+                intermediateVisitor.addIntermediateCode(new LabelCode(elseEndLable));
             }
         } else if (stmtType == WHILE) {
             String falseLabel = TCode.genNewLable();
             String beginLabel = TCode.genNewLable();
-            intermediateVisitor.addIntermediateCode(new LableCode(beginLabel));
+            intermediateVisitor.addIntermediateCode(new LabelCode(beginLabel));
             whileCondNode.generateIntermediate(intermediateVisitor, null, falseLabel);
             whileStmtNode.generateIntermediate(intermediateVisitor,
                 new Pair<>(beginLabel, falseLabel));
             intermediateVisitor.addIntermediateCode(
                 new JumpCode(new Operand(beginLabel, Operand.OperandType.ADDRESS), Operator.JUMP));
-            intermediateVisitor.addIntermediateCode(new LableCode(falseLabel));
+            intermediateVisitor.addIntermediateCode(new LabelCode(falseLabel));
         } else if (stmtType == CONTINUE) {
             String beginLoopLabel = loop.getFirst();
             intermediateVisitor.addIntermediateCode(

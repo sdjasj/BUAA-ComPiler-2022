@@ -23,10 +23,12 @@ public class Function {
     private ArrayList<IntermediateCode> intermediateCodes;
     private boolean isMain;
     private String name;
+    private FlowGraph flowGraph;
 
     public Function(String name) {
         this.name = name;
         this.intermediateCodes = new ArrayList<>();
+        this.flowGraph = new FlowGraph();
     }
 
     public void addIntermediateCode(IntermediateCode intermediateCode) {
@@ -82,6 +84,11 @@ public class Function {
             }
         }
     }
+
+    public void buildBasicBlocks() {
+        flowGraph.buildBasicBlocks(intermediateCodes);
+    }
+
 
     public void toMips(VarAddressOffset varAddressOffset, MipsVisitor mipsVisitor,
                        RegisterPool registerPool) {
