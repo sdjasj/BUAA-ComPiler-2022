@@ -27,29 +27,30 @@ public class BranchCode extends IntermediateCode {
     @Override
     public void toMips(MipsVisitor mipsVisitor, VarAddressOffset varAddressOffset,
                        RegisterPool registerPool) {
-        String src1Reg;
-        if (source1.isNUMBER()) {
-            src1Reg = registerPool.getTempReg(true, varAddressOffset, mipsVisitor);
-            mipsVisitor.addMipsCode(MipsCode.generateLi(src1Reg, source1.getName()));
-        } else if (mipsVisitor.varIsGlobal(source1.getName())) {
-            src1Reg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor);
-            mipsVisitor.addMipsCode(MipsCode.generateLW(src1Reg, source1.getName(), "$0"));
-        } else {
-            src1Reg =
-                registerPool.allocateRegToVarLoad(source1.getName(), varAddressOffset, mipsVisitor);
-        }
+        String src1Reg = getSrcReg(source1, varAddressOffset, mipsVisitor, registerPool);
+//        if (source1.isNUMBER()) {
+//            src1Reg = registerPool.getTempReg(true, varAddressOffset, mipsVisitor);
+//            mipsVisitor.addMipsCode(MipsCode.generateLi(src1Reg, source1.getName()));
+//        } else if (mipsVisitor.varIsGlobal(source1.getName())) {
+//            src1Reg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor);
+//            mipsVisitor.addMipsCode(MipsCode.generateLW(src1Reg, source1.getName(), "$0"));
+//        } else {
+//            src1Reg =
+//                registerPool.allocateRegToVarLoad(source1.getName(), varAddressOffset, mipsVisitor);
+//        }
 
         String src2Reg = null;
         if (source2 != null) {
-            if (source2.isNUMBER()) {
-                src2Reg = source2.getName();
-            } else if (mipsVisitor.varIsGlobal(source2.getName())) {
-                src2Reg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor);
-                mipsVisitor.addMipsCode(MipsCode.generateLW(src2Reg, source2.getName(), "$0"));
-            } else {
-                src2Reg =
-                    registerPool.allocateRegToVarLoad(source2.getName(), varAddressOffset, mipsVisitor);
-            }
+//            if (source2.isNUMBER()) {
+//                src2Reg = source2.getName();
+//            } else if (mipsVisitor.varIsGlobal(source2.getName())) {
+//                src2Reg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor);
+//                mipsVisitor.addMipsCode(MipsCode.generateLW(src2Reg, source2.getName(), "$0"));
+//            } else {
+//                src2Reg =
+//                    registerPool.allocateRegToVarLoad(source2.getName(), varAddressOffset, mipsVisitor);
+//            }
+            src2Reg = getSrcReg(source2, varAddressOffset, mipsVisitor, registerPool);
         }
 
 //        BEQ,

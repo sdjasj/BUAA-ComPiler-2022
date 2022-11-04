@@ -1,5 +1,6 @@
 package MipsCode;
 
+import IntermediateCode.Operand;
 import MipsCode.MipsCode.MipsCode;
 
 import java.util.ArrayList;

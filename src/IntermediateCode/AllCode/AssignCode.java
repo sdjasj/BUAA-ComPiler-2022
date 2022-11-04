@@ -20,60 +20,71 @@ public class AssignCode extends IntermediateCode {
         //comment
         mipsVisitor.addMipsCode(MipsCode.generateComment("assign " + target + " by " + source1));
 
-
+        String src1Reg = getSrcReg(source1, varAddressOffset, mipsVisitor, registerPool);
         if (mipsVisitor.varIsGlobal(target.getName())) {
-            if (getSource1().isNUMBER()) {
-                String tempReg =
-                    registerPool.getTempReg(true, varAddressOffset, mipsVisitor);
-                MipsCode liCode = MipsCode.generateLi(tempReg, source1.getName());
-                mipsVisitor.addMipsCode(liCode);
-                MipsCode storeCode = MipsCode.generateSW(tempReg, target.getName(), "$0");
-                mipsVisitor.addMipsCode(storeCode);
-            } else if (mipsVisitor.varIsGlobal(source1.getName())) {
-                String tempReg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor);
-                MipsCode loadCode = MipsCode.generateLW(tempReg, source1.getName(), "$0");
-                mipsVisitor.addMipsCode(loadCode);
-
-                mipsVisitor.addMipsCode(MipsCode.generateSW(tempReg, target.getName(), "$0"));
-
-            } else {
-                MipsCode storeCode =
-                    MipsCode.generateSW(
-                        registerPool.allocateRegToVarLoad(source1.getName(), varAddressOffset,
-                            mipsVisitor),
-                        target.getName(), "$0");
-                mipsVisitor.addMipsCode(storeCode);
-            }
+            MipsCode storeCode = MipsCode.generateSW(src1Reg, target.getName(), "$0");
+            mipsVisitor.addMipsCode(storeCode);
         } else {
-            if (getSource1().isNUMBER()) {
-                String tempReg =
-                    registerPool.allocateRegToVarNotLoad(target.getName(), varAddressOffset,
-                        mipsVisitor);
-                MipsCode liCode = MipsCode.generateLi(tempReg, source1.getName());
-                mipsVisitor.addMipsCode(liCode);
-            } else if (mipsVisitor.varIsGlobal(source1.getName())) {
-                String tempReg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor);
-                MipsCode loadCode = MipsCode.generateLW(tempReg, source1.getName(), "$0");
-                mipsVisitor.addMipsCode(loadCode);
-
-                String targetReg =
-                    registerPool.allocateRegToVarNotLoad(target.getName(), varAddressOffset,
-                        mipsVisitor);
-
-                mipsVisitor.addMipsCode(MipsCode.generateMOVE(targetReg, tempReg));
-            } else {
-//                System.err.println(target.getName());
-//                System.err.println(source1.getName());
-                String targetReg =
-                    registerPool.allocateRegToVarNotLoad(target.getName(), varAddressOffset,
-                        mipsVisitor);
-                MipsCode moveCode =
-                    MipsCode.generateMOVE(targetReg,
-                        registerPool.allocateRegToVarLoad(source1.getName(), varAddressOffset,
-                            mipsVisitor));
-                mipsVisitor.addMipsCode(moveCode);
-            }
+            String targetReg =
+                registerPool.allocateRegToVarNotLoad(target.getName(), varAddressOffset,
+                    mipsVisitor);
+            MipsCode moveCode =
+                MipsCode.generateMOVE(targetReg, src1Reg);
+            mipsVisitor.addMipsCode(moveCode);
         }
+
+
+//        if (mipsVisitor.varIsGlobal(target.getName())) {
+//            if (getSource1().isNUMBER()) {
+//                String tempReg =
+//                    registerPool.getTempReg(true, varAddressOffset, mipsVisitor);
+//                MipsCode liCode = MipsCode.generateLi(tempReg, source1.getName());
+//                mipsVisitor.addMipsCode(liCode);
+//                MipsCode storeCode = MipsCode.generateSW(tempReg, target.getName(), "$0");
+//                mipsVisitor.addMipsCode(storeCode);
+//            } else if (mipsVisitor.varIsGlobal(source1.getName())) {
+//                String tempReg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor);
+//                MipsCode loadCode = MipsCode.generateLW(tempReg, source1.getName(), "$0");
+//                mipsVisitor.addMipsCode(loadCode);
+//
+//                mipsVisitor.addMipsCode(MipsCode.generateSW(tempReg, target.getName(), "$0"));
+//
+//            } else {
+//                MipsCode storeCode =
+//                    MipsCode.generateSW(
+//                        registerPool.allocateRegToVarLoad(source1.getName(), varAddressOffset,
+//                            mipsVisitor),
+//                        target.getName(), "$0");
+//                mipsVisitor.addMipsCode(storeCode);
+//            }
+//        } else {
+//            if (getSource1().isNUMBER()) {
+//                String tempReg =
+//                    registerPool.allocateRegToVarNotLoad(target.getName(), varAddressOffset,
+//                        mipsVisitor);
+//                MipsCode liCode = MipsCode.generateLi(tempReg, source1.getName());
+//                mipsVisitor.addMipsCode(liCode);
+//            } else if (mipsVisitor.varIsGlobal(source1.getName())) {
+//                String tempReg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor);
+//                MipsCode loadCode = MipsCode.generateLW(tempReg, source1.getName(), "$0");
+//                mipsVisitor.addMipsCode(loadCode);
+//
+//                String targetReg =
+//                    registerPool.allocateRegToVarNotLoad(target.getName(), varAddressOffset,
+//                        mipsVisitor);
+//
+//                mipsVisitor.addMipsCode(MipsCode.generateMOVE(targetReg, tempReg));
+//            } else {
+//                String targetReg =
+//                    registerPool.allocateRegToVarNotLoad(target.getName(), varAddressOffset,
+//                        mipsVisitor);
+//                MipsCode moveCode =
+//                    MipsCode.generateMOVE(targetReg,
+//                        registerPool.allocateRegToVarLoad(source1.getName(), varAddressOffset,
+//                            mipsVisitor));
+//                mipsVisitor.addMipsCode(moveCode);
+//            }
+//        }
     }
 
     @Override

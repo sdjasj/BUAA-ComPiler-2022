@@ -18,31 +18,39 @@ public class MemoryCode extends IntermediateCode {
     public void toMips(MipsVisitor mipsVisitor, VarAddressOffset varAddressOffset,
                        RegisterPool registerPool) {
         String targetReg;
-        if (target.isNUMBER()) {
-            //存储的为数字
-            targetReg = registerPool.getTempReg(true, varAddressOffset, mipsVisitor);
-            mipsVisitor.addMipsCode(MipsCode.generateLi(targetReg, target.getName()));
+        if (op == Operator.LOAD) {
+            targetReg = registerPool.allocateRegToVarNotLoad(target.getName(), varAddressOffset, mipsVisitor);
         } else {
-            //存储的为变量
-            targetReg =
-                registerPool.allocateRegToVarNotLoad(target.getName(), varAddressOffset,
-                    mipsVisitor);
-
+            if (target.isNUMBER()) {
+                //存储的为数字
+                targetReg = registerPool.getTempReg(true, varAddressOffset, mipsVisitor);
+                mipsVisitor.addMipsCode(MipsCode.generateLi(targetReg, target.getName()));
+            } else {
+                //存储的为变量
+                if (mipsVisitor.varIsGlobal(target.getName())) {
+                    targetReg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor);
+                    mipsVisitor.addMipsCode(MipsCode.generateLW(targetReg, target.getName(), "$0"));
+                } else {
+                    targetReg =
+                        registerPool.allocateRegToVarLoad(target.getName(), varAddressOffset,
+                            mipsVisitor);
+                }
+            }
         }
 
-        String source2Reg;
-        if (source2.isNUMBER()) {
-            source2Reg = registerPool.getTempReg(true, varAddressOffset, mipsVisitor);
-            mipsVisitor.addMipsCode(
-                MipsCode.generateLi(source2Reg, addressMul4(source2.getName())));
-        } else if (mipsVisitor.varIsGlobal(source2.getName())) {
-            source2Reg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor);
-            mipsVisitor.addMipsCode(MipsCode.generateLW(source2Reg, source2.getName(), "$0"));
-        } else {
-            source2Reg =
-                registerPool.allocateRegToVarLoad(source2.getName(), varAddressOffset,
-                    mipsVisitor);
-        }
+        String source2Reg = getSrcReg(source2, varAddressOffset, mipsVisitor, registerPool);
+//        if (source2.isNUMBER()) {
+//            source2Reg = registerPool.getTempReg(true, varAddressOffset, mipsVisitor);
+//            mipsVisitor.addMipsCode(
+//                MipsCode.generateLi(source2Reg, addressMul4(source2.getName())));
+//        } else if (mipsVisitor.varIsGlobal(source2.getName())) {
+//            source2Reg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor);
+//            mipsVisitor.addMipsCode(MipsCode.generateLW(source2Reg, source2.getName(), "$0"));
+//        } else {
+//            source2Reg =
+//                registerPool.allocateRegToVarLoad(source2.getName(), varAddressOffset,
+//                    mipsVisitor);
+//        }
 
         if (mipsVisitor.varIsGlobal(source1.getName())) {
             //操作的内存名称为全局变量
@@ -53,12 +61,15 @@ public class MemoryCode extends IntermediateCode {
             }
             return;
         } else {
+            //局部变量
             String tempReg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor);
             if (varAddressOffset.isParam(source1.getName())) {
+                //参数
                 mipsVisitor.addMipsCode(MipsCode.generateLW(tempReg,
                     String.valueOf(varAddressOffset.getArrayOffset(source1.getName(), 0)), "$sp"));
                 mipsVisitor.addMipsCode(MipsCode.generateADDU(source2Reg, source2Reg, tempReg));
             } else {
+                //普通局部变量
                 mipsVisitor.addMipsCode(MipsCode.generateADDIU(tempReg, "$sp",
                     String.valueOf(varAddressOffset.getArrayOffset(source1.getName(), 0))));
                 mipsVisitor.addMipsCode(MipsCode.generateADDU(source2Reg, source2Reg, tempReg));

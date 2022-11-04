@@ -9,6 +9,7 @@ public class BasicBlock {
     private HashSet<BasicBlock> successor;
     private HashSet<BasicBlock> precursor;
     private ArrayList<IntermediateCode> intermediateCodes;
+    private boolean isBegin;
 
     public BasicBlock(ArrayList<IntermediateCode> intermediateCodes) {
         this.intermediateCodes = intermediateCodes;
@@ -25,5 +26,15 @@ public class BasicBlock {
         precursor.add(basicBlock);
     }
 
+    public boolean isBegin() {
+        return isBegin;
+    }
 
+    public void setBegin(boolean begin) {
+        isBegin = begin;
+    }
+
+    public ArrayList<IntermediateCode> getIntermediateCodes() {
+        return intermediateCodes;
+    }
 }

@@ -48,9 +48,8 @@ public class FunctionReturnCode extends IntermediateCode {
         if (target.isNUMBER()) {
             mipsVisitor.addMipsCode(MipsCode.generateLi("$v0", target.getName()));
         } else {
-            mipsVisitor.addMipsCode(MipsCode.generateMOVE("$v0",
-                registerPool.allocateRegToVarLoad(target.getName(), varAddressOffset,
-                    mipsVisitor)));
+            String targetReg = getSrcReg(target, varAddressOffset, mipsVisitor, registerPool);
+            mipsVisitor.addMipsCode(MipsCode.generateMOVE("$v0", targetReg));
         }
 
         ArrayList<String> usedGlobalRegs = registerPool.getGlobalRegs();

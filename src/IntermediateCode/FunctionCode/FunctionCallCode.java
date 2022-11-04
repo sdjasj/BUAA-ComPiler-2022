@@ -22,18 +22,15 @@ public class FunctionCallCode extends IntermediateCode {
 
         ArrayList<String> regs = registerPool.getUsedTempRegs();
         for (String reg : regs) {
+//            System.err.println(reg);
+//            System.err.println(registerPool.getVarNameOfTempReg(reg));
             MipsCode storeUsedGlobalRegs = MipsCode.generateSW(reg,
                 String.valueOf(
                     varAddressOffset.getVarOffset(registerPool.getVarNameOfTempReg(reg))), "$sp");
             mipsVisitor.addMipsCode(storeUsedGlobalRegs);
         }
+        registerPool.clearAllTempRegs();
         mipsVisitor.addMipsCode(MipsCode.generateJAL(target.getName()));
-        for (String reg : regs) {
-            MipsCode storeUsedGlobalRegs = MipsCode.generateLW(reg,
-                String.valueOf(
-                    varAddressOffset.getVarOffset(registerPool.getVarNameOfTempReg(reg))), "$sp");
-            mipsVisitor.addMipsCode(storeUsedGlobalRegs);
-        }
     }
 
     @Override

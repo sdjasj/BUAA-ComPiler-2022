@@ -21,17 +21,17 @@ public class SingleCalculateCode extends IntermediateCode {
         String targetReg =
             registerPool.allocateRegToVarNotLoad(target.getName(), varAddressOffset,
                 mipsVisitor);
-        String src1Reg;
-        if (source1.isNUMBER()) {
-            src1Reg = registerPool.getTempReg(true, varAddressOffset, mipsVisitor);
-            mipsVisitor.addMipsCode(MipsCode.generateLi(src1Reg, source1.getName()));
-        } else if (mipsVisitor.varIsGlobal(source1.getName())) {
-            src1Reg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor);
-            mipsVisitor.addMipsCode(MipsCode.generateLW(src1Reg, source1.getName(), "$0"));
-        } else {
-            src1Reg =
-                registerPool.allocateRegToVarLoad(source1.getName(), varAddressOffset, mipsVisitor);
-        }
+        String src1Reg = getSrcReg(source1, varAddressOffset, mipsVisitor, registerPool);
+//        if (source1.isNUMBER()) {
+//            src1Reg = registerPool.getTempReg(true, varAddressOffset, mipsVisitor);
+//            mipsVisitor.addMipsCode(MipsCode.generateLi(src1Reg, source1.getName()));
+//        } else if (mipsVisitor.varIsGlobal(source1.getName())) {
+//            src1Reg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor);
+//            mipsVisitor.addMipsCode(MipsCode.generateLW(src1Reg, source1.getName(), "$0"));
+//        } else {
+//            src1Reg =
+//                registerPool.allocateRegToVarLoad(source1.getName(), varAddressOffset, mipsVisitor);
+//        }
         if (op == Operator.PLUS) {
             mipsVisitor.addMipsCode(MipsCode.generateADDU(targetReg, "$0", src1Reg));
         } else if (op == Operator.NEG) {

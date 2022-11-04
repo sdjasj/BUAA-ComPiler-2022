@@ -62,6 +62,10 @@ public class RegisterPool {
         return tempRegToVarMap.get(reg);
     }
 
+    public String getVarNameOfGlobalReg(String reg) {
+        return globalRegToVarMap.get(reg);
+    }
+
     public String getLongestNotUsedTempReg() {
         return LRUTempRegs.get(LRUTempRegs.size() - 1);
     }
@@ -327,7 +331,6 @@ public class RegisterPool {
         globalRegToVarMap = new HashMap<>();
         varToGlobalRegMap = new HashMap<>();
         LRUGlobalRegs = new LinkedList<>();
-        usedTempRegs = new HashSet<>();
     }
 
     public ArrayList<String> getTempRegs() {

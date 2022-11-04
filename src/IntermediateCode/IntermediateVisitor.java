@@ -67,83 +67,8 @@ public class IntermediateVisitor {
         }
         //添加代码
         for (Function function : functions) {
-            if (function.isMain()) {
-                registerPool.clearAllTempRegs();
-                registerPool.clearAllGlobalRegs();
-                mipsVisitor.addMipsCode(MipsCode.generateTag(function.getName()));
-                //确定变量的空间
-                VarAddressOffset varAddressOffset = new VarAddressOffset(0);
-                //函数参数
-                functionMapVarAddressOffset.put(function.getName(), varAddressOffset);
-                function.getParamOffset(varAddressOffset);
-                //ra
-                varAddressOffset.addReg("$ra");
-                //全局寄存器
-//                varAddressOffset.addGlobalRegsAddress(registerPool);
-                varAddressOffset.addAllRegs(registerPool);
-                //局部变量 && 临时变量
-                function.getVarOffset(varAddressOffset);
-
-
-                //sp偏移
-                int offset = varAddressOffset.getCurOffset();
-                MipsCode mipsCode = MipsCode.generateADDIU("$sp", "$sp", String.valueOf(-offset));
-                mipsVisitor.addMipsCode(mipsCode);
-
-                MipsCode raStored =
-                    MipsCode.generateSW("$ra", String.valueOf(varAddressOffset.getRegOffset("$ra")),
-                        "$sp");
-                mipsVisitor.addMipsCode(raStored);
-
-//                ArrayList<String> usedGlobalRegs = registerPool.getGlobalUsedRegs();
-//                for (String usedGlobalReg : usedGlobalRegs) {
-//                    MipsCode storeUsedGlobalRegs = MipsCode.generateSW(usedGlobalReg,
-//                        String.valueOf(varAddressOffset.getRegOffset(usedGlobalReg)), "$sp");
-//                    mipsVisitor.addMipsCode(storeUsedGlobalRegs);
-//                }
-
-                registerPool.clearAllTempRegs();
-                function.toMips(varAddressOffset, mipsVisitor, registerPool);
-            }
-        }
-        for (Function function : functions) {
-            if (!function.isMain()) {
-                registerPool.clearAllTempRegs();
-                registerPool.clearAllGlobalRegs();
-                mipsVisitor.addMipsCode(MipsCode.generateTag(function.getName()));
-                //确定变量的空间
-                VarAddressOffset varAddressOffset = new VarAddressOffset(0);
-                //函数参数
-                functionMapVarAddressOffset.put(function.getName(), varAddressOffset);
-                function.getParamOffset(varAddressOffset);
-                //ra
-                varAddressOffset.addReg("$ra");
-                //全局寄存器
-//                varAddressOffset.addGlobalRegsAddress(registerPool);
-                varAddressOffset.addAllRegs(registerPool);
-                //局部变量 && 临时变量
-                function.getVarOffset(varAddressOffset);
-
-
-                //sp偏移
-                int offset = varAddressOffset.getCurOffset();
-                MipsCode mipsCode = MipsCode.generateADDIU("$sp", "$sp", String.valueOf(-offset));
-                mipsVisitor.addMipsCode(mipsCode);
-
-                MipsCode raStored =
-                    MipsCode.generateSW("$ra", String.valueOf(varAddressOffset.getRegOffset("$ra")),
-                        "$sp");
-                mipsVisitor.addMipsCode(raStored);
-
-                ArrayList<String> usedGlobalRegs = registerPool.getGlobalRegs();
-                for (String usedGlobalReg : usedGlobalRegs) {
-                    MipsCode storeUsedGlobalRegs = MipsCode.generateSW(usedGlobalReg,
-                        String.valueOf(varAddressOffset.getRegOffset(usedGlobalReg)), "$sp");
-                    mipsVisitor.addMipsCode(storeUsedGlobalRegs);
-                }
-                registerPool.clearAllTempRegs();
-                function.toMips(varAddressOffset, mipsVisitor, registerPool);
-            }
+            function.buildBasicBlocks();
+            function.toMips(mipsVisitor);
         }
     }
 }

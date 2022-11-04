@@ -105,7 +105,7 @@ public class VarDefNode extends ParserNode {
                         Operand t = new Operand(TCode.genNewT(), Operand.OperandType.VAR);
                         intermediateVisitor.addIntermediateCode(new AssignCode(t, operands.get(i)));
                         MemoryCode memoryCode = new MemoryCode(t, target,
-                            new Operand(String.valueOf(i), Operand.OperandType.NUMBER),
+                            new Operand(String.valueOf(i * 4), Operand.OperandType.NUMBER),
                             Operator.STORE);
                         intermediateVisitor.addIntermediateCode(memoryCode);
                     }

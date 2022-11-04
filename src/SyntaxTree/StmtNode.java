@@ -180,11 +180,14 @@ public class StmtNode extends ParserNode {
                 formatString.getValue().substring(1, formatString.getValue().length() - 1)
                     .split("((?<=%d)|(?=%d)|(?<=\\\\n))|(?=\\\\n)");
             int idx = 0;
+            ArrayList<Operand> expOutputList = new ArrayList<>();
+            for (ExpNode node : formatStringExp) {
+                expOutputList.add(node.generateMidCodeAndReturnTempVar(intermediateVisitor));
+            }
             for (String outputString : outputStrings) {
                 if (outputString.equals("%d")) {
-                    ExpNode expNode = formatStringExp.get(idx);
+                    Operand target = expOutputList.get(idx);
                     idx++;
-                    Operand target = expNode.generateMidCodeAndReturnTempVar(intermediateVisitor);
                     OutputCode outputCode = new OutputCode(target, true);
                     intermediateVisitor.addIntermediateCode(outputCode);
                 } else {

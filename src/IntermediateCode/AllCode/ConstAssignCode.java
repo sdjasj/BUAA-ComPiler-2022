@@ -45,7 +45,7 @@ public class ConstAssignCode extends IntermediateCode {
             for (int i = 0; i < getSize(); i++) {
                 int offset = varAddressOffset.getArrayOffset(target.getName(), i);
                 int val = initVal.get(i);
-                MipsCode mipsCode = MipsCode.generateLi(tempReg, addressMul4(String.valueOf(val)));
+                MipsCode mipsCode = MipsCode.generateLi(tempReg, String.valueOf(val));
                 mipsVisitor.addMipsCode(mipsCode);
                 mipsCode = MipsCode.generateSW(tempReg, String.valueOf(offset), "$sp");
                 mipsVisitor.addMipsCode(mipsCode);

@@ -59,7 +59,7 @@ public class VarAddressOffset {
     }
 
     public int getArrayOffset(String name, int offset) {
-        return curOffset - varOffsetMap.get(name) - offset * 4;
+        return curOffset - varOffsetMap.get(name) + offset * 4;
     }
 
     public int getRegOffset(String name) {

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import IntermediateCode.AllCode.BranchCode;
 import IntermediateCode.AllCode.JumpCode;
 import IntermediateCode.AllCode.LabelCode;
+import IntermediateCode.FunctionCode.ExitCode;
 import IntermediateCode.FunctionCode.FunctionReturnCode;
 
 
@@ -27,24 +28,24 @@ public class FlowGraph {
                 int j = 0;
                 for (; j < intermediateCodes.size(); j++) {
                     if (intermediateCodes.get(j) instanceof LabelCode &&
-                        intermediateCode.getTarget().getName().equals(tag)) {
-                        while (j < intermediateCodes.size() &&
-                            intermediateCodes.get(j) instanceof LabelCode) {
-                            j++;
+                        ((LabelCode) intermediateCodes.get(j)).getLabel().equals(tag)) {
+                        while (j >= 0 && intermediateCodes.get(j) instanceof LabelCode) {
+                            j--;
                         }
                         break;
                     }
                 }
-                intermediateCodes.get(j).setBasicBlockBegin(true);
-
+                intermediateCodes.get(j + 1).setBasicBlockBegin(true);
                 int k = i + 1;
                 //跳转下一条语句
-                while (k < intermediateCodes.size() &&
-                    intermediateCodes.get(i) instanceof LabelCode) {
-                    k++;
-                }
+//                while (k < intermediateCodes.size() &&
+//                    intermediateCodes.get(k) instanceof LabelCode) {
+//                    k++;
+//                }
                 intermediateCodes.get(k).setBasicBlockBegin(true);
-            } else if (intermediateCode instanceof FunctionReturnCode) {
+            } else if (intermediateCode instanceof FunctionReturnCode ||
+                intermediateCode instanceof ExitCode) {
+
                 intermediateCodes.get(i + 1).setBasicBlockBegin(true);
             }
         }
@@ -66,5 +67,10 @@ public class FlowGraph {
                 i++;
             }
         }
+        basicBlocks.get(0).setBegin(true);
+    }
+
+    public ArrayList<BasicBlock> getBasicBlocks() {
+        return basicBlocks;
     }
 }

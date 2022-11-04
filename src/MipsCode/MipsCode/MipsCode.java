@@ -113,14 +113,6 @@ public class MipsCode {
         return mipsCode;
     }
 
-    public static MipsCode generateCompareCode(String target, String source1, String source2,
-                                               String codeName) {
-        MipsCode mipsCode = new MipsCode(codeName, target, source1, source2);
-        return mipsCode;
-    }
-
-
-
     public void output() {
         if (codeName.equals("lw")) {
             System.out.println("lw " + target + ", " + source1 + "(" + source2 + ")");
@@ -131,7 +123,7 @@ public class MipsCode {
         } else if (codeName.equals("addiu")) {
             System.out.println("addiu " + target + ", " + source1 + ", " + source2);
         } else if (codeName.equals("tag")) {
-            System.out.println("\n\n\n\n" + target + ": ");
+            System.out.println(target + ": ");
         } else if (codeName.equals("li")) {
             System.out.println("li " + target + ", " + source1);
         } else if (codeName.equals("move")) {
