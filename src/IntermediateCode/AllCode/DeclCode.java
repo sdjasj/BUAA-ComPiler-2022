@@ -3,8 +3,10 @@ package IntermediateCode.AllCode;
 import IntermediateCode.IntermediateCode;
 import IntermediateCode.Operand;
 import IntermediateCode.Operator;
+import Tool.Pair;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class DeclCode extends IntermediateCode {
     private ArrayList<Integer> dimensions;
@@ -12,6 +14,11 @@ public class DeclCode extends IntermediateCode {
     public DeclCode(Operand target, ArrayList<Integer> dimensions) {
         super(target, null, null, Operator.DECL);
         this.dimensions = dimensions;
+    }
+
+    @Override
+    public Pair<Operand, Operand> getRightVal() {
+        return null;
     }
 
     public int getVarSize() {

@@ -160,7 +160,7 @@ public class StmtNode extends ParserNode {
                 intermediateVisitor.addIntermediateCode(functionReturnCode);
             }
         } else if (stmtType == LVAL_GETINT) {
-            Operand src1 = new Operand(TCode.genNewT(), Operand.OperandType.VAR);
+            Operand src1 = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
             InputCode inputCode = new InputCode(src1);
             intermediateVisitor.addIntermediateCode(inputCode);
             //判断lval是否为数组 TODO
@@ -197,7 +197,7 @@ public class StmtNode extends ParserNode {
                             outputString);
                     intermediateVisitor.addGlobalDecl(globalStrDecl);
                     OutputCode outputCode =
-                        new OutputCode(new Operand(name, Operand.OperandType.ADDRESS), false);
+                        new OutputCode(Operand.getNewOperand(name, Operand.OperandType.ADDRESS), false);
                     intermediateVisitor.addIntermediateCode(outputCode);
                 }
             }
@@ -213,7 +213,7 @@ public class StmtNode extends ParserNode {
             ifStmtNode.generateIntermediate(intermediateVisitor, loop);
             if (elseStmtNode != null) {
                 intermediateVisitor.addIntermediateCode(
-                    new JumpCode(new Operand(elseEndLable, Operand.OperandType.ADDRESS),
+                    new JumpCode(Operand.getNewOperand(elseEndLable, Operand.OperandType.ADDRESS),
                         Operator.JUMP));
             }
             //falseLable
@@ -231,17 +231,17 @@ public class StmtNode extends ParserNode {
             whileStmtNode.generateIntermediate(intermediateVisitor,
                 new Pair<>(beginLabel, falseLabel));
             intermediateVisitor.addIntermediateCode(
-                new JumpCode(new Operand(beginLabel, Operand.OperandType.ADDRESS), Operator.JUMP));
+                new JumpCode(Operand.getNewOperand(beginLabel, Operand.OperandType.ADDRESS), Operator.JUMP));
             intermediateVisitor.addIntermediateCode(new LabelCode(falseLabel));
         } else if (stmtType == CONTINUE) {
             String beginLoopLabel = loop.getFirst();
             intermediateVisitor.addIntermediateCode(
-                new JumpCode(new Operand(beginLoopLabel, Operand.OperandType.ADDRESS),
+                new JumpCode(Operand.getNewOperand(beginLoopLabel, Operand.OperandType.ADDRESS),
                     Operator.JUMP));
         } else if (stmtType == BREAK) {
             String endLoopLabel = loop.getSecond();
             intermediateVisitor.addIntermediateCode(
-                new JumpCode(new Operand(endLoopLabel, Operand.OperandType.ADDRESS),
+                new JumpCode(Operand.getNewOperand(endLoopLabel, Operand.OperandType.ADDRESS),
                     Operator.JUMP));
         }
 

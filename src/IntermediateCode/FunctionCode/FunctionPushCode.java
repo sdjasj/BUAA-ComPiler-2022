@@ -8,68 +8,74 @@ import MipsCode.MipsVisitor;
 import MipsCode.RegisterPool;
 import MipsCode.VarAddressOffset;
 
+import java.util.List;
+
 public class FunctionPushCode extends IntermediateCode {
     int offset;
 
     public FunctionPushCode(Operand target, int offset) {
-        super(target, null, null, Operator.PUSH);
+        super(null, target, null, Operator.PUSH);
         this.offset = offset;
+    }
+
+    @Override
+    public Operand getLeftVal() {
+        return null;
     }
 
     @Override
     public void toMips(MipsVisitor mipsVisitor, VarAddressOffset varAddressOffset,
                        RegisterPool registerPool) {
 
-        if (target.isNUMBER()) {
+        if (source1.isNUMBER()) {
             String reg = registerPool.getTempReg(true, varAddressOffset, mipsVisitor);
-            mipsVisitor.addMipsCode(MipsCode.generateLi(reg, target.getName()));
+            mipsVisitor.addMipsCode(MipsCode.generateLi(reg, source1.getName()));
             mipsVisitor.addMipsCode(
                 MipsCode.generateSW(reg, String.valueOf(-(offset * 4 + 4)), "$sp"));
-        } else if (mipsVisitor.varIsGlobal(target.getName())) {
-            if (target.isAddress()) {
+        } else if (mipsVisitor.varIsGlobal(source1.getName())) {
+            if (source1.isAddress()) {
                 String reg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor);
-                mipsVisitor.addMipsCode(MipsCode.generateLA(target.getName(), reg));
+                mipsVisitor.addMipsCode(MipsCode.generateLA(source1.getName(), reg));
                 mipsVisitor.addMipsCode(
                     MipsCode.generateSW(reg, String.valueOf(-(offset * 4 + 4)), "$sp"));
-            } else if (target.isVar()) {
+            } else if (source1.isVar()) {
                 String reg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor);
-                mipsVisitor.addMipsCode(MipsCode.generateLW(reg, target.getName(), "$0"));
+                mipsVisitor.addMipsCode(MipsCode.generateLW(reg, source1.getName(), "$0"));
                 mipsVisitor.addMipsCode(
                     MipsCode.generateSW(reg, String.valueOf(-(offset * 4 + 4)), "$sp"));
             } else {
                 System.err.println("error in toMips of funtion push by global");
             }
-        } else if (varAddressOffset.isParam(target.getName())) {
-            if (target.isAddress()) {
+        } else if (varAddressOffset.isParam(source1)) {
+            if (source1.isAddress()) {
                 String tempReg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor);
                 mipsVisitor.addMipsCode(
                     MipsCode.generateLW(tempReg,
-                        String.valueOf(varAddressOffset.getVarOffset(
-                            target.getName())), "$sp"));
+                        String.valueOf(varAddressOffset.getVarOffset(source1)), "$sp"));
                 mipsVisitor.addMipsCode(
                     MipsCode.generateSW(tempReg, String.valueOf(-(offset * 4 + 4)), "$sp"));
-            } else if (target.isVar()) {
-                mipsVisitor.addMipsCode(MipsCode.generateSW(
-                    registerPool.allocateRegToVarLoad(target.getName(), varAddressOffset,
-                        mipsVisitor),
-                    String.valueOf(-(offset * 4 + 4)), "$sp"));
+            } else if (source1.isVar()) {
+                String reg = registerPool.allocateRegToVarLoad(source1, varAddressOffset,
+                    mipsVisitor);
+                mipsVisitor.addMipsCode(
+                    MipsCode.generateSW(reg, String.valueOf(-(offset * 4 + 4)), "$sp"));
             } else {
                 System.err.println("error in toMips of funtion push by param");
             }
         } else {
-            if (target.isVar()) {
+            if (source1.isVar()) {
                 mipsVisitor.addMipsCode(MipsCode.generateSW(
-                    registerPool.allocateRegToVarLoad(target.getName(), varAddressOffset,
+                    registerPool.allocateRegToVarLoad(source1, varAddressOffset,
                         mipsVisitor), String.valueOf(-(offset * 4 + 4)), "$sp"));
-            } else if (target.isAddress()) {
-                if (target.getName().startsWith("t@")) {
+            } else if (source1.isAddress()) {
+                if (source1.getName().startsWith("t@")) {
                     String reg =
-                        registerPool.allocateRegToVarLoad(target.getName(), varAddressOffset,
+                        registerPool.allocateRegToVarLoad(source1, varAddressOffset,
                             mipsVisitor);
                     mipsVisitor.addMipsCode(
                         MipsCode.generateSW(reg, String.valueOf(-(offset * 4 + 4)), "$sp"));
                 } else {
-                    int arrayOffset = varAddressOffset.getVarOffset(target.getName());
+                    int arrayOffset = varAddressOffset.getVarOffset(source1);
                     String tempReg = registerPool.getTempReg(true, varAddressOffset, mipsVisitor);
                     mipsVisitor.addMipsCode(
                         MipsCode.generateADDIU(tempReg, "$sp", String.valueOf(arrayOffset)));
@@ -78,7 +84,6 @@ public class FunctionPushCode extends IntermediateCode {
                 }
             }
         }
-
 
 
 //        if (target.isNUMBER()) {
@@ -136,6 +141,6 @@ public class FunctionPushCode extends IntermediateCode {
 
     @Override
     public void output() {
-        System.out.println(Operator.PUSH + " " + target);
+        System.out.println(Operator.PUSH + " " + source1);
     }
 }

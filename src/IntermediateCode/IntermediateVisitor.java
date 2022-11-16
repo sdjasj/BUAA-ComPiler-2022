@@ -31,8 +31,8 @@ public class IntermediateVisitor {
         for (GlobalDecl globalDecl : globalDecls) {
             globalDecl.output();
         }
-        for (IntermediateCode intermediateCode : intermediateCodes) {
-            intermediateCode.output();
+        for (Function function : functions) {
+            function.output();
         }
     }
 
@@ -46,6 +46,21 @@ public class IntermediateVisitor {
         function.setMain(isMain);
         functions.add(function);
         curFunction = function;
+    }
+
+    public void optimize() {
+        for (Function function : functions) {
+            function.buildBasicBlocks();
+            function.basicBlockOptimize();
+            function.colorAllocate();
+        }
+    }
+
+    public void testPrint() {
+        for (Function function : functions) {
+            System.err.println("\n\n" + function.getName());
+            function.testPrint();
+        }
     }
 
     public boolean isMainFuncNow() {
@@ -67,7 +82,6 @@ public class IntermediateVisitor {
         }
         //添加代码
         for (Function function : functions) {
-            function.buildBasicBlocks();
             function.toMips(mipsVisitor);
         }
     }

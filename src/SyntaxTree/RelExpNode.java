@@ -42,7 +42,7 @@ public class RelExpNode extends ParserNode {
                 } else if (op == TokenType.GEQ) {
                     ICop = Operator.BGE;
                 }
-                target = new Operand(trueLabel, Operand.OperandType.ADDRESS);
+                target = Operand.getNewOperand(trueLabel, Operand.OperandType.ADDRESS);
             } else {
                 if (op == TokenType.LSS) {
                     ICop = Operator.BGE;
@@ -53,18 +53,18 @@ public class RelExpNode extends ParserNode {
                 } else if (op == TokenType.GEQ) {
                     ICop = Operator.BLT;
                 }
-                target = new Operand(falseLabel, Operand.OperandType.ADDRESS);
+                target = Operand.getNewOperand(falseLabel, Operand.OperandType.ADDRESS);
             }
             intermediateVisitor.addIntermediateCode(new BranchCode(target, src1, src2, ICop));
         } else {
             Operand src1 = addExpNode.generateMidCodeAndReturnTempVar(intermediateVisitor);
             if (falseLabel != null) {
                 intermediateVisitor.addIntermediateCode(
-                    new BranchCode(new Operand(falseLabel, Operand.OperandType.ADDRESS), src1, null,
+                    new BranchCode(Operand.getNewOperand(falseLabel, Operand.OperandType.ADDRESS), src1, null,
                         Operator.BEQZ));
             } else {
                 intermediateVisitor.addIntermediateCode(
-                    new BranchCode(new Operand(trueLabel, Operand.OperandType.ADDRESS), src1, null,
+                    new BranchCode(Operand.getNewOperand(trueLabel, Operand.OperandType.ADDRESS), src1, null,
                         Operator.BNEZ));
             }
         }
@@ -75,7 +75,7 @@ public class RelExpNode extends ParserNode {
         if (relExpNode != null) {
             Operand src1 = relExpNode.getRelExpResult(intermediateVisitor);
             Operand src2 = addExpNode.generateMidCodeAndReturnTempVar(intermediateVisitor);
-            Operand target = new Operand(TCode.genNewT(), Operand.OperandType.VAR);
+            Operand target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
             Operator ICop = null;
             if (op == TokenType.LSS) {
                 ICop = Operator.LT;

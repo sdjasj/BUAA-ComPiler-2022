@@ -7,6 +7,9 @@ import MipsCode.MipsCode.MipsCode;
 import MipsCode.MipsVisitor;
 import MipsCode.RegisterPool;
 import MipsCode.VarAddressOffset;
+import Tool.Pair;
+
+import java.util.List;
 
 
 public class LabelCode extends IntermediateCode {
@@ -19,6 +22,16 @@ public class LabelCode extends IntermediateCode {
 
     public String getLabel() {
         return label;
+    }
+
+    @Override
+    public Operand getLeftVal() {
+        return null;
+    }
+
+    @Override
+    public Pair<Operand, Operand> getRightVal() {
+        return null;
     }
 
     @Override

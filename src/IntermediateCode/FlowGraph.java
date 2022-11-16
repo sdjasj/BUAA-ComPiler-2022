@@ -51,26 +51,75 @@ public class FlowGraph {
         }
 
         int i = 0;
+        int blockCnt = 0;
+        BasicBlock basicBlock = new BasicBlock(blockCnt++);
         while (i < intermediateCodes.size()) {
             if (intermediateCodes.get(i).isBasicBlockBegin) {
-                ArrayList<IntermediateCode> basicBlocksCodes = new ArrayList<>();
-                basicBlocksCodes.add(intermediateCodes.get(i));
+                if (intermediateCodes.get(i) instanceof LabelCode) {
+                    basicBlock.addTag(((LabelCode) intermediateCodes.get(i)).getLabel());
+                }
+                basicBlock.addIntermediateCode(intermediateCodes.get(i));
                 i++;
                 while (i < intermediateCodes.size() &&
                     !intermediateCodes.get(i).isBasicBlockBegin) {
-                    basicBlocksCodes.add(intermediateCodes.get(i));
+                    if (intermediateCodes.get(i) instanceof LabelCode) {
+                        basicBlock.addTag(((LabelCode) intermediateCodes.get(i)).getLabel());
+                    }
+                    basicBlock.addIntermediateCode(intermediateCodes.get(i));
                     i++;
                 }
-                BasicBlock basicBlock = new BasicBlock(basicBlocksCodes);
                 basicBlocks.add(basicBlock);
+                basicBlock = new BasicBlock(blockCnt++);
             } else {
                 i++;
             }
         }
         basicBlocks.get(0).setBegin(true);
+        buildFlowGraph();
+    }
+
+    public void buildFlowGraph() {
+        for (int i = 0; i < basicBlocks.size(); i++) {
+            IntermediateCode lastCode = basicBlocks.get(i).getLastCode();
+            if (lastCode instanceof BranchCode) {
+                //条件跳转
+                String label = lastCode.target.getName();
+                for (int j = 0; j < basicBlocks.size(); j++) {
+                    if (basicBlocks.get(j).containTag(label)) {
+                        basicBlocks.get(i).addSuccessor(basicBlocks.get(j));
+                        basicBlocks.get(j).addPrecursor(basicBlocks.get(i));
+                        if (i < basicBlocks.size() - 1) {
+                            basicBlocks.get(i).addSuccessor(basicBlocks.get(i + 1));
+                            basicBlocks.get(i + 1).addPrecursor(basicBlocks.get(i));
+                        }
+                    }
+                }
+            } else if (lastCode instanceof JumpCode) {
+                String label = lastCode.target.getName();
+                for (int j = 0; j < basicBlocks.size(); j++) {
+                    if (basicBlocks.get(j).containTag(label)) {
+                        basicBlocks.get(i).addSuccessor(basicBlocks.get(j));
+                        basicBlocks.get(j).addPrecursor(basicBlocks.get(i));
+                    }
+                }
+            } else {
+                if (i < basicBlocks.size() - 1) {
+                    basicBlocks.get(i).addSuccessor(basicBlocks.get(i + 1));
+                    basicBlocks.get(i + 1).addPrecursor(basicBlocks.get(i));
+                }
+            }
+        }
     }
 
     public ArrayList<BasicBlock> getBasicBlocks() {
         return basicBlocks;
+    }
+
+    public void testPrint() {
+        int cnt = 0;
+        for (BasicBlock basicBlock : basicBlocks) {
+            System.err.println(cnt++);
+            basicBlock.testPrint();
+        }
     }
 }

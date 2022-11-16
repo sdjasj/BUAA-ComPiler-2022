@@ -1,6 +1,8 @@
 package SyntaxTree;
 
 import IntermediateCode.IntermediateVisitor;
+import IntermediateCode.Operand;
+import IntermediateCode.TCode;
 import MySymbolTable.SymbolTable;
 
 import java.io.IOException;
@@ -24,6 +26,7 @@ public class CompUnitNode extends ParserNode {
         }
         mainFuncDefNode.generateIntermediate(intermediateVisitor);
         for (FuncDefNode funcDefNode : funcDefNodes) {
+            Operand.clearOperands();
             funcDefNode.generateIntermediate(intermediateVisitor);
         }
     }

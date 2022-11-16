@@ -7,8 +7,11 @@ import MipsCode.MipsCode.MipsCode;
 import MipsCode.MipsVisitor;
 import MipsCode.RegisterPool;
 import MipsCode.VarAddressOffset;
+import Tool.Pair;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 
 public class FunctionReturnCode extends IntermediateCode {
 
@@ -21,11 +24,30 @@ public class FunctionReturnCode extends IntermediateCode {
     }
 
     @Override
+    public Operand getLeftVal() {
+        return null;
+    }
+
+    @Override
+    public Pair<Operand, Operand> getRightVal() {
+        return new Pair<Operand, Operand>(target, null);
+    }
+
+    @Override
+    public HashSet<Operand> getUsedSet() {
+        HashSet<Operand> ans = new HashSet<>();
+        if (target != null) {
+            ans.add(target);
+        }
+        return ans;
+    }
+
+    @Override
     public void toMips(MipsVisitor mipsVisitor, VarAddressOffset varAddressOffset,
                        RegisterPool registerPool) {
 
         if (target == null) {
-            ArrayList<String> usedGlobalRegs = registerPool.getGlobalRegs();
+            ArrayList<String> usedGlobalRegs = new ArrayList<>(conflictGraph.getUsedGlobalRegs());
             for (String usedGlobalReg : usedGlobalRegs) {
                 MipsCode storeUsedGlobalRegs = MipsCode.generateLW(usedGlobalReg,
                     String.valueOf(varAddressOffset.getRegOffset(usedGlobalReg)), "$sp");
@@ -52,7 +74,7 @@ public class FunctionReturnCode extends IntermediateCode {
             mipsVisitor.addMipsCode(MipsCode.generateMOVE("$v0", targetReg));
         }
 
-        ArrayList<String> usedGlobalRegs = registerPool.getGlobalRegs();
+        ArrayList<String> usedGlobalRegs = new ArrayList<>(conflictGraph.getUsedGlobalRegs());
         for (String usedGlobalReg : usedGlobalRegs) {
             MipsCode storeUsedGlobalRegs = MipsCode.generateLW(usedGlobalReg,
                 String.valueOf(varAddressOffset.getRegOffset(usedGlobalReg)), "$sp");

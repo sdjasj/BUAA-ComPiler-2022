@@ -26,7 +26,7 @@ public class AssignCode extends IntermediateCode {
             mipsVisitor.addMipsCode(storeCode);
         } else {
             String targetReg =
-                registerPool.allocateRegToVarNotLoad(target.getName(), varAddressOffset,
+                registerPool.allocateRegToVarNotLoad(target, varAddressOffset,
                     mipsVisitor);
             MipsCode moveCode =
                 MipsCode.generateMOVE(targetReg, src1Reg);

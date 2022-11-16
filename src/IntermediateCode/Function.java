@@ -1,6 +1,7 @@
 package IntermediateCode;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 
 import IntermediateCode.AllCode.AssignCode;
@@ -29,6 +30,7 @@ public class Function {
     private FlowGraph flowGraph;
     private VarAddressOffset varAddressOffset;
     private RegisterPool registerPool;
+    private ConflictGraph conflictGraph;
 
     public Function(String name) {
         this.name = name;
@@ -57,8 +59,7 @@ public class Function {
         for (IntermediateCode intermediateCode : intermediateCodes) {
             if (intermediateCode instanceof FunctionParam) {
                 //函数参数
-                String name = intermediateCode.getTarget().getName();
-                varAddressOffset.addParam(name, 4);
+                varAddressOffset.addParam(intermediateCode.getTarget(), 4);
             }
         }
     }
@@ -67,24 +68,24 @@ public class Function {
         for (IntermediateCode intermediateCode : intermediateCodes) {
             if (intermediateCode instanceof DeclCode) {
                 //局部变量
-                String name = intermediateCode.getTarget().getName();
                 int size = ((DeclCode) intermediateCode).getVarSize();
-                varAddressOffset.addVar(name, size);
+                varAddressOffset.addVar(intermediateCode.getTarget(), size);
             }
         }
 
         HashSet<String> tempVarSet = new HashSet<>();
         for (IntermediateCode intermediateCode : intermediateCodes) {
-            if (intermediateCode instanceof CalculateCode || intermediateCode instanceof InputCode
-                || intermediateCode instanceof OutputCode ||
+            if (intermediateCode instanceof CalculateCode ||
+                intermediateCode instanceof InputCode ||
                 intermediateCode instanceof SingleCalculateCode ||
                 intermediateCode instanceof AssignCode || intermediateCode instanceof MemoryCode ||
                 intermediateCode instanceof CompareCode) {
+
                 //临时变量
                 String name = intermediateCode.getTarget().getName();
                 if (name.startsWith("t@") && !tempVarSet.contains(name)) {
                     tempVarSet.add(name);
-                    varAddressOffset.addVar(name, 4);
+                    varAddressOffset.addVar(intermediateCode.getTarget(), 4);
                 }
             }
         }
@@ -92,6 +93,17 @@ public class Function {
 
     public void buildBasicBlocks() {
         flowGraph.buildBasicBlocks(intermediateCodes);
+    }
+
+    public void basicBlockOptimize() {
+        BlockOptimizer.activeVarAnalyze(flowGraph);
+    }
+
+    public void colorAllocate() {
+        conflictGraph = new ConflictGraph();
+        BlockOptimizer.buildConflictGraph(conflictGraph, flowGraph);
+        RegisterAllocator registerAllocator = new RegisterAllocator(conflictGraph);
+        registerAllocator.allocGlobalReg();
     }
 
     public void toMips(MipsVisitor mipsVisitor) {
@@ -108,11 +120,10 @@ public class Function {
                 //ra
                 varAddressOffset.addReg("$ra");
                 //全局寄存器
-//                varAddressOffset.addGlobalRegsAddress(registerPool);
-                varAddressOffset.addAllRegs(registerPool);
+                varAddressOffset.addGlobalRegsAddress(conflictGraph);
+//                varAddressOffset.addAllRegs(registerPool);
                 //局部变量 && 临时变量
                 getVarOffset(varAddressOffset);
-
 //                System.err.println(varAddressOffset.getVarOffset("t@1"));
 
 
@@ -128,61 +139,97 @@ public class Function {
 
                 //现在全局寄存器全存
                 if (!isMain) {
-                    ArrayList<String> usedGlobalRegs = registerPool.getGlobalRegs();
+                    ArrayList<String> usedGlobalRegs = new ArrayList<>(
+                        conflictGraph.getUsedGlobalRegs());
                     for (String usedGlobalReg : usedGlobalRegs) {
                         MipsCode storeUsedGlobalRegs = MipsCode.generateSW(usedGlobalReg,
                             String.valueOf(varAddressOffset.getRegOffset(usedGlobalReg)), "$sp");
                         mipsVisitor.addMipsCode(storeUsedGlobalRegs);
                     }
                 }
+
+                for (IntermediateCode intermediateCode : intermediateCodes) {
+                    if (intermediateCode instanceof FunctionParam) {
+                        //函数参数
+                        Operand var = intermediateCode.target;
+                        if (var.isAllocatedReg()) {
+                            mipsVisitor.addMipsCode(
+                                MipsCode.generateLW(var.getReg(), String.valueOf(varAddressOffset.getVarOffset(var)),
+                                    "$sp"));
+                        }
+                    }
+                }
+
+
             }
             registerPool.clearAllTempRegs();
-            registerPool.clearAllGlobalRegs();
             ArrayList<IntermediateCode> intermediateCodes = basicBlock.getIntermediateCodes();
             for (int i = 0; i < intermediateCodes.size(); i++) {
                 IntermediateCode intermediateCode = intermediateCodes.get(i);
+                intermediateCode.setConflictGraph(conflictGraph);
                 if (intermediateCode instanceof BranchCode ||
                     intermediateCode instanceof JumpCode) {
-                    storeRegs(mipsVisitor);
+                    storeRegs(mipsVisitor, basicBlock);
                     intermediateCode.toMips(mipsVisitor, varAddressOffset, registerPool);
                 } else if (i == intermediateCodes.size() - 1) {
                     intermediateCode.toMips(mipsVisitor, varAddressOffset, registerPool);
-                    storeRegs(mipsVisitor);
+                    storeRegs(mipsVisitor, basicBlock);
                 } else {
                     intermediateCode.toMips(mipsVisitor, varAddressOffset, registerPool);
                 }
             }
 
             registerPool.clearAllTempRegs();
-            registerPool.clearAllGlobalRegs();
         }
     }
 
-    public void storeRegs(MipsVisitor mipsVisitor) {
-        ArrayList<String> regs = registerPool.getUsedTempRegs();
-        for (String reg : regs) {
-            MipsCode storeUsedGlobalRegs = MipsCode.generateSW(reg,
-                String.valueOf(
-                    varAddressOffset.getVarOffset(
-                        registerPool.getVarNameOfTempReg(reg))), "$sp");
-            mipsVisitor.addMipsCode(storeUsedGlobalRegs);
+    public void storeRegs(MipsVisitor mipsVisitor, BasicBlock basicBlock) {
+//        ArrayList<String> regs = registerPool.getUsedTempRegs();
+        HashSet<Operand> activeVar = basicBlock.getActiveOutSet();
+        ArrayList<Operand> varOfRegs = registerPool.getVarInReg();
+        HashMap<Operand, String> varToReg = registerPool.getVarToTempRegMap();
+        //将还要用到的全局寄存器写回内存
+        for (Operand varOfReg : varOfRegs) {
+            if (activeVar.contains(varOfReg)) {
+                MipsCode storeUsedGlobalRegs = MipsCode.generateSW(varToReg.get(varOfReg),
+                    String.valueOf(
+                        varAddressOffset.getVarOffset(varOfReg)), "$sp");
+                mipsVisitor.addMipsCode(storeUsedGlobalRegs);
+            }
         }
 
-        regs = registerPool.getGlobalUsedRegs();
-        for (String reg : regs) {
-//            System.err.println(registerPool.getVarNameOfGlobalReg(reg));
-//            System.err.println(reg);
-            MipsCode storeUsedGlobalRegs = MipsCode.generateSW(reg,
-                String.valueOf(
-                    varAddressOffset.getVarOffset(
-                        registerPool.getVarNameOfGlobalReg(reg))), "$sp");
-            mipsVisitor.addMipsCode(storeUsedGlobalRegs);
-        }
+//        for (String reg : regs) {
+//            MipsCode storeUsedGlobalRegs = MipsCode.generateSW(reg,
+//                String.valueOf(
+//                    varAddressOffset.getVarOffset(
+//                        registerPool.getVarNameOfTempReg(reg))), "$sp");
+//            mipsVisitor.addMipsCode(storeUsedGlobalRegs);
+//        }
+
+//        for (String reg : regs) {
+////            System.err.println(registerPool.getVarNameOfGlobalReg(reg));
+////            System.err.println(reg);
+//            MipsCode storeUsedGlobalRegs = MipsCode.generateSW(reg,
+//                String.valueOf(
+//                    varAddressOffset.getVarOffset(
+//                        registerPool.getVarNameOfGlobalReg(reg))), "$sp");
+//            mipsVisitor.addMipsCode(storeUsedGlobalRegs);
+//        }
     }
 
     public void output() {
-        for (IntermediateCode intermediateCode : intermediateCodes) {
-            intermediateCode.output();
+//        for (IntermediateCode intermediateCode : intermediateCodes) {
+//            intermediateCode.output();
+//        }
+        ArrayList<BasicBlock> basicBlocks = flowGraph.getBasicBlocks();
+        int cnt = 0;
+        for (BasicBlock basicBlock : basicBlocks) {
+            System.out.println("######### BasicBlock" + cnt++);
+            basicBlock.output();
         }
+    }
+
+    public void testPrint() {
+        flowGraph.testPrint();
     }
 }

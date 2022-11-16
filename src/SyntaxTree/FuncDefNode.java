@@ -25,7 +25,7 @@ public class FuncDefNode extends ParserNode {
     public void generateIntermediate(IntermediateVisitor intermediateVisitor) {
         intermediateVisitor.changeNewFunction(false, ident.getValue());
         FunctionCode functionCode =
-            new FunctionCode(new Operand(ident.getValue(), Operand.OperandType.ADDRESS));
+            new FunctionCode(Operand.getNewOperand(ident.getValue(), Operand.OperandType.ADDRESS));
         intermediateVisitor.addIntermediateCode(functionCode);
         if (funcFParams != null) {
             funcFParams.generateIntermediate(intermediateVisitor);
@@ -35,7 +35,7 @@ public class FuncDefNode extends ParserNode {
             intermediateVisitor.addIntermediateCode(new FunctionReturnCode());
         }
         FunctionEndCode functionEndCode =
-            new FunctionEndCode(new Operand(ident.getValue(), Operand.OperandType.ADDRESS));
+            new FunctionEndCode(Operand.getNewOperand(ident.getValue(), Operand.OperandType.ADDRESS));
         intermediateVisitor.addIntermediateCode(functionEndCode);
     }
 }

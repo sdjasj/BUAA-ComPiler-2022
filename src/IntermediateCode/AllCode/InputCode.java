@@ -7,12 +7,20 @@ import MipsCode.MipsCode.MipsCode;
 import MipsCode.MipsVisitor;
 import MipsCode.RegisterPool;
 import MipsCode.VarAddressOffset;
+import Tool.Pair;
+
+import java.util.List;
 
 
 public class InputCode extends IntermediateCode {
 
     public InputCode(Operand target) {
         super(target, null, null, Operator.SCANF);
+    }
+
+    @Override
+    public Pair<Operand, Operand> getRightVal() {
+        return null;
     }
 
     @Override
@@ -30,7 +38,7 @@ public class InputCode extends IntermediateCode {
             mipsVisitor.addMipsCode(MipsCode.generateSW("$v0", target.getName(), "$0"));
         } else {
             String res =
-                registerPool.allocateRegToVarNotLoad(target.getName(), varAddressOffset, mipsVisitor);
+                registerPool.allocateRegToVarNotLoad(target, varAddressOffset, mipsVisitor);
             mipsVisitor.addMipsCode(MipsCode.generateMOVE(res, "$v0"));
         }
     }

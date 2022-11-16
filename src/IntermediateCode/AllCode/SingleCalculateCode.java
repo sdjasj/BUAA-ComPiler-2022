@@ -19,7 +19,7 @@ public class SingleCalculateCode extends IntermediateCode {
     public void toMips(MipsVisitor mipsVisitor, VarAddressOffset varAddressOffset,
                        RegisterPool registerPool) {
         String targetReg =
-            registerPool.allocateRegToVarNotLoad(target.getName(), varAddressOffset,
+            registerPool.allocateRegToVarNotLoad(target, varAddressOffset,
                 mipsVisitor);
         String src1Reg = getSrcReg(source1, varAddressOffset, mipsVisitor, registerPool);
 //        if (source1.isNUMBER()) {

@@ -8,6 +8,9 @@ import MipsCode.MipsVisitor;
 import MipsCode.RegisterPool;
 import MipsCode.VarAddressOffset;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class CalculateCode extends IntermediateCode {
 
     public CalculateCode(Operand target, Operand source1, Operand source2,
@@ -15,6 +18,10 @@ public class CalculateCode extends IntermediateCode {
         super(target, source1, source2, op);
     }
 
+    @Override
+    public Operand getLeftVal() {
+        return null;
+    }
 
     @Override
     public void toMips(MipsVisitor mipsVisitor, VarAddressOffset varAddressOffset,
@@ -63,7 +70,7 @@ public class CalculateCode extends IntermediateCode {
 
 
         String resReg =
-            registerPool.allocateRegToVarNotLoad(target.getName(), varAddressOffset, mipsVisitor);
+            registerPool.allocateRegToVarNotLoad(target, varAddressOffset, mipsVisitor);
         if (op == Operator.ADD) {
             MipsCode mipsCode = MipsCode.generateADDU(resReg, source1Reg, source2Reg);
             mipsVisitor.addMipsCode(mipsCode);
@@ -71,17 +78,13 @@ public class CalculateCode extends IntermediateCode {
             MipsCode mipsCode = MipsCode.generateSUBU(resReg, source1Reg, source2Reg);
             mipsVisitor.addMipsCode(mipsCode);
         } else if (op == Operator.MUL) {
-            MipsCode mipsCode = MipsCode.generateMULT(source1Reg, source2Reg);
+            MipsCode mipsCode = MipsCode.generateMUL(resReg, source1Reg, source2Reg);
             mipsVisitor.addMipsCode(mipsCode);
-            MipsCode mipsCode1 = MipsCode.generateMFLO(resReg);
-            mipsVisitor.addMipsCode(mipsCode1);
         } else if (op == Operator.DIV) {
-            MipsCode mipsCode = MipsCode.generateDIV(source1Reg, source2Reg);
+            MipsCode mipsCode = MipsCode.generateDIV(resReg, source1Reg, source2Reg);
             mipsVisitor.addMipsCode(mipsCode);
-            MipsCode mipsCode1 = MipsCode.generateMFLO(resReg);
-            mipsVisitor.addMipsCode(mipsCode1);
         } else if (op == Operator.MOD) {
-            MipsCode mipsCode = MipsCode.generateDIV(source1Reg, source2Reg);
+            MipsCode mipsCode = MipsCode.generateDIVMOD(source1Reg, source2Reg);
             mipsVisitor.addMipsCode(mipsCode);
             MipsCode mipsCode1 = MipsCode.generateMFHI(resReg);
             mipsVisitor.addMipsCode(mipsCode1);

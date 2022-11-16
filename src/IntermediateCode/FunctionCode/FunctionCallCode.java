@@ -7,8 +7,10 @@ import MipsCode.MipsCode.MipsCode;
 import MipsCode.MipsVisitor;
 import MipsCode.RegisterPool;
 import MipsCode.VarAddressOffset;
+import Tool.Pair;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class FunctionCallCode extends IntermediateCode {
 
@@ -17,9 +19,19 @@ public class FunctionCallCode extends IntermediateCode {
     }
 
     @Override
+    public Operand getLeftVal() {
+        return null;
+    }
+
+    @Override
+    public Pair<Operand, Operand> getRightVal() {
+        return null;
+    }
+
+    @Override
     public void toMips(MipsVisitor mipsVisitor, VarAddressOffset varAddressOffset,
                        RegisterPool registerPool) {
-
+        //TODO 临时寄存器现在无脑存,只需要存以后会用的
         ArrayList<String> regs = registerPool.getUsedTempRegs();
         for (String reg : regs) {
 //            System.err.println(reg);
@@ -29,8 +41,16 @@ public class FunctionCallCode extends IntermediateCode {
                     varAddressOffset.getVarOffset(registerPool.getVarNameOfTempReg(reg))), "$sp");
             mipsVisitor.addMipsCode(storeUsedGlobalRegs);
         }
-        registerPool.clearAllTempRegs();
         mipsVisitor.addMipsCode(MipsCode.generateJAL(target.getName()));
+        for (String reg : regs) {
+//            System.err.println(reg);
+//            System.err.println(registerPool.getVarNameOfTempReg(reg));
+            MipsCode storeUsedGlobalRegs = MipsCode.generateLW(reg,
+                String.valueOf(
+                    varAddressOffset.getVarOffset(registerPool.getVarNameOfTempReg(reg))), "$sp");
+            mipsVisitor.addMipsCode(storeUsedGlobalRegs);
+        }
+        registerPool.clearAllTempRegs();
     }
 
     @Override

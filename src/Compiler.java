@@ -47,7 +47,9 @@ public class Compiler {
         CompUnitNode compUnitNode = parser.parseCompUnit();
         IntermediateVisitor intermediateVisitor = new IntermediateVisitor();
         compUnitNode.generateIntermediate(intermediateVisitor);
+        intermediateVisitor.optimize();
 //        intermediateVisitor.output();
+//        intermediateVisitor.testPrint();
         MipsVisitor mipsVisitor = new MipsVisitor();
         intermediateVisitor.IntermediateToMips(mipsVisitor);
         mipsVisitor.output();

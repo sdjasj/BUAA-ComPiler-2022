@@ -24,8 +24,14 @@ public class FuncFParamNode extends ParserNode {
 
     public void generateIntermediate(IntermediateVisitor intermediateVisitor) {
         String name = TCode.reName(ident.getValue(), blockDepth);
+        Operand.OperandType operandType;
+        if (dimensionLength.size() > 0) {
+            operandType = Operand.OperandType.ADDRESS;
+        } else {
+            operandType = Operand.OperandType.VAR;
+        }
         FunctionParam functionParam =
-            new FunctionParam(new Operand(name, Operand.OperandType.VAR), dimensionLength);
+            new FunctionParam(Operand.getNewOperand(name, operandType), dimensionLength);
 
         intermediateVisitor.addIntermediateCode(functionParam);
     }

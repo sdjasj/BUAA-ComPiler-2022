@@ -54,13 +54,13 @@ public class ConstDefNode extends ParserNode {
                 int initVal = constInitValNode.getConstVal(RecordSymbolTable);
                 String name = TCode.reName(ident.getValue(), blockDepth);
 
-                Operand target = new Operand(name, Operand.OperandType.VAR);
+                Operand target = Operand.getNewOperand(name, Operand.OperandType.VAR);
                 DeclCode declCode =
                     new DeclCode(target, new ArrayList<>());
                 intermediateVisitor.addIntermediateCode(declCode);
 
                 ConstAssignCode constAssignCode =
-                    new ConstAssignCode(new Operand(name, Operand.OperandType.VAR),
+                    new ConstAssignCode(Operand.getNewOperand(name, Operand.OperandType.VAR),
                         new ArrayList<Integer>() {
                             {
                                 add(initVal);
@@ -73,12 +73,12 @@ public class ConstDefNode extends ParserNode {
                 ArrayList<Integer> initVal = constInitValNode.getConstArrayVal(RecordSymbolTable);
                 String name = TCode.reName(ident.getValue(), blockDepth);
 
-                Operand target = new Operand(name, Operand.OperandType.ADDRESS);
+                Operand target = Operand.getNewOperand(name, Operand.OperandType.ADDRESS);
                 DeclCode declCode = new DeclCode(target, dimensionLength);
                 intermediateVisitor.addIntermediateCode(declCode);
 
                 ConstAssignCode constAssignCode =
-                    new ConstAssignCode(new Operand(name, Operand.OperandType.ADDRESS), initVal,
+                    new ConstAssignCode(Operand.getNewOperand(name, Operand.OperandType.ADDRESS), initVal,
                         dimensionLength);
                 intermediateVisitor.addIntermediateCode(constAssignCode);
             }

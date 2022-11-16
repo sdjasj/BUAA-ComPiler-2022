@@ -1,5 +1,6 @@
 package MipsCode;
 
+import IntermediateCode.Operand;
 import MipsCode.MipsCode.MipsCode;
 
 import java.util.ArrayList;
@@ -8,12 +9,9 @@ import java.util.HashSet;
 import java.util.LinkedList;
 
 public class RegisterPool {
-    private HashMap<String, String> tempRegToVarMap;
-    private HashMap<String, String> globalRegToVarMap;
-    private HashMap<String, String> varToTempRegMap;
-    private HashMap<String, String> varToGlobalRegMap;
+    private HashMap<String, Operand> tempRegToVarMap;
+    private HashMap<Operand, String> varToTempRegMap;
     private LinkedList<String> LRUTempRegs;
-    private LinkedList<String> LRUGlobalRegs;
     private HashSet<String> usedTempRegs;
     private ArrayList<String> tempRegs = new ArrayList<String>() {
         {
@@ -34,36 +32,16 @@ public class RegisterPool {
             add("$t9");
         }
     };
-    private ArrayList<String> globalRegs = new ArrayList<String>() {
-        {
-            add("$s0");
-            add("$s1");
-            add("$s2");
-            add("$s3");
-            add("$s4");
-            add("$s5");
-            add("$s6");
-            add("$s7");
-            add("$fp");
-        }
-    };
 
     public RegisterPool() {
-        this.globalRegToVarMap = new HashMap<>();
         this.tempRegToVarMap = new HashMap<>();
-        this.varToGlobalRegMap = new HashMap<>();
         this.varToTempRegMap = new HashMap<>();
-        this.LRUGlobalRegs = new LinkedList<>(globalRegs);
         this.LRUTempRegs = new LinkedList<>(tempRegs);
         this.usedTempRegs = new HashSet<>();
     }
 
-    public String getVarNameOfTempReg(String reg) {
+    public Operand getVarNameOfTempReg(String reg) {
         return tempRegToVarMap.get(reg);
-    }
-
-    public String getVarNameOfGlobalReg(String reg) {
-        return globalRegToVarMap.get(reg);
     }
 
     public String getLongestNotUsedTempReg() {
@@ -75,34 +53,19 @@ public class RegisterPool {
         LRUTempRegs.addFirst(reg);
     }
 
-    public String getLongestNotUsedGlobalReg() {
-        return LRUGlobalRegs.get(LRUGlobalRegs.size() - 1);
-    }
-
-    public void setRecentLyUsedGlobalReg(String reg) {
-        LRUGlobalRegs.remove(reg);
-        LRUGlobalRegs.addFirst(reg);
-    }
-
-    public ArrayList<String> getGlobalUsedRegs() {
-        ArrayList<String> regs = new ArrayList<>();
-        for (String globalReg : globalRegs) {
-            if (globalRegToVarMap.containsKey(globalReg)) {
-                regs.add(globalReg);
-            }
-        }
-        return regs;
-    }
-
-    public String allocateRegToVarLoad(String varName, VarAddressOffset varAddressOffset,
-                                   MipsVisitor mipsVisitor) {
+    public String allocateRegToVarLoad(Operand operand, VarAddressOffset varAddressOffset,
+                                       MipsVisitor mipsVisitor) {
+        String varName = operand.getName();
         if (varName.equals("RET")) {
             return "$v0";
         }
-        if (varName.startsWith("t@")) {
-            return allocateTempRegToVar(varName, varAddressOffset, mipsVisitor, true);
-        }  else {
-            return allocateGlobalRegToVar(varName, varAddressOffset, mipsVisitor, true);
+        if (operand.isTemp()) {
+            return allocateTempRegToVar(operand, varAddressOffset, mipsVisitor, true);
+        } else {
+            if (operand.isAllocatedReg()) {
+                return operand.getReg();
+            }
+            return allocateTempRegToVar(operand, varAddressOffset, mipsVisitor, true);
         }
     }
 
@@ -120,7 +83,7 @@ public class RegisterPool {
 
         setRecentLyUsedTempReg(tempReg);
         if (tempRegToVarMap.containsKey(tempReg)) {
-            String tempVarName = tempRegToVarMap.get(tempReg);
+            Operand tempVarName = tempRegToVarMap.get(tempReg);
 
             int offset = varAddressOffset.getVarOffset(tempVarName);
             MipsCode mipsCode = MipsCode.generateSW(tempReg, String.valueOf(offset), "$sp");
@@ -133,7 +96,7 @@ public class RegisterPool {
         return tempReg;
     }
 
-    public String allocateTempRegToVar(String varName, VarAddressOffset varAddressOffset,
+    public String allocateTempRegToVar(Operand varName, VarAddressOffset varAddressOffset,
                                        MipsVisitor mipsVisitor, boolean load) {
         if (varToTempRegMap.containsKey(varName)) {
             String reg = varToTempRegMap.get(varName);
@@ -148,8 +111,8 @@ public class RegisterPool {
                 usedTempRegs.add(tempReg);
                 if (load) {
                     MipsCode loadNewReg =
-                        MipsCode.generateLW(tempReg, String.valueOf(varAddressOffset.getVarOffset(varName)),
-                            "$sp");
+                        MipsCode.generateLW(tempReg,
+                            String.valueOf(varAddressOffset.getVarOffset(varName)), "$sp");
                     mipsVisitor.addMipsCode(loadNewReg);
                 }
 
@@ -159,7 +122,7 @@ public class RegisterPool {
         String tempReg = getLongestNotUsedTempReg();
         setRecentLyUsedTempReg(tempReg);
         if (tempRegToVarMap.containsKey(tempReg)) {
-            String tempVarName = tempRegToVarMap.get(tempReg);
+            Operand tempVarName = tempRegToVarMap.get(tempReg);
 
             int offset = varAddressOffset.getVarOffset(tempVarName);
             MipsCode mipsCode = MipsCode.generateSW(tempReg, String.valueOf(offset), "$sp");
@@ -179,82 +142,78 @@ public class RegisterPool {
         return tempReg;
     }
 
-    public boolean varIsNumber(String var) {
-        return var.matches("\\d+");
-    }
-
-    public String allocateGlobalRegToVar(String varName, VarAddressOffset varAddressOffset,
-                                         MipsVisitor mipsVisitor, boolean load) {
-//        if (varName.equals("10")) {
-//            System.err.println("1111");
+//    public String allocateGlobalRegToVar(String varName, VarAddressOffset varAddressOffset,
+//                                         MipsVisitor mipsVisitor, boolean load) {
+////        if (varName.equals("10")) {
+////            System.err.println("1111");
+////        }
+//        if (varToGlobalRegMap.containsKey(varName)) {
+//            String reg = varToGlobalRegMap.get(varName);
+//            setRecentLyUsedGlobalReg(reg);
+//            return reg;
 //        }
-        if (varToGlobalRegMap.containsKey(varName)) {
-            String reg = varToGlobalRegMap.get(varName);
-            setRecentLyUsedGlobalReg(reg);
-            return reg;
-        }
-
-        for (String globalReg : globalRegs) {
-            if (!globalRegToVarMap.containsKey(globalReg)) {
-                //不会有全局变量
-                setRecentLyUsedGlobalReg(globalReg);
-                globalRegToVarMap.put(globalReg, varName);
-                varToGlobalRegMap.put(varName, globalReg);
-
-                if (load) {
-                    if (mipsVisitor.varIsGlobal(varName)) {
-                        MipsCode loadNewReg =
-                            MipsCode.generateLW(globalReg,
-                                varName,
-                                "$0");
-                        mipsVisitor.addMipsCode(loadNewReg);
-                    } else {
-                        MipsCode loadNewReg =
-                            MipsCode.generateLW(globalReg,
-                                String.valueOf(varAddressOffset.getVarOffset(varName)),
-                                "$sp");
-                        mipsVisitor.addMipsCode(loadNewReg);
-                    }
-                }
-
-                return globalReg;
-            }
-        }
-
-        String globalReg = getLongestNotUsedGlobalReg();
-        setRecentLyUsedGlobalReg(globalReg);
-        String globalVarName = globalRegToVarMap.get(globalReg);
-
-//        System.err.println(globalReg);
-//        System.err.println(globalVarName);
-        int offset = varAddressOffset.getVarOffset(globalVarName);
-        MipsCode mipsCode = MipsCode.generateSW(globalReg, String.valueOf(offset), "$sp");
-        mipsVisitor.addMipsCode(mipsCode);
-
-        varToGlobalRegMap.remove(globalVarName);
-        varToGlobalRegMap.put(varName, globalReg);
-        globalRegToVarMap.put(globalReg, varName);
-
-
-
-        if (load) {
-            if (mipsVisitor.varIsGlobal(varName)) {
-                MipsCode loadNewReg =
-                    MipsCode.generateLW(globalReg,
-                        varName,
-                        "$0");
-                mipsVisitor.addMipsCode(loadNewReg);
-            } else {
-                MipsCode loadNewReg =
-                    MipsCode.generateLW(globalReg,
-                        String.valueOf(varAddressOffset.getVarOffset(varName)),
-                        "$sp");
-                mipsVisitor.addMipsCode(loadNewReg);
-            }
-        }
-
-        return globalReg;
-    }
+//
+//        for (String globalReg : globalRegs) {
+//            if (!globalRegToVarMap.containsKey(globalReg)) {
+//                //不会有全局变量
+//                setRecentLyUsedGlobalReg(globalReg);
+//                globalRegToVarMap.put(globalReg, varName);
+//                varToGlobalRegMap.put(varName, globalReg);
+//
+//                if (load) {
+//                    if (mipsVisitor.varIsGlobal(varName)) {
+//                        MipsCode loadNewReg =
+//                            MipsCode.generateLW(globalReg,
+//                                varName,
+//                                "$0");
+//                        mipsVisitor.addMipsCode(loadNewReg);
+//                    } else {
+//                        MipsCode loadNewReg =
+//                            MipsCode.generateLW(globalReg,
+//                                String.valueOf(varAddressOffset.getVarOffset(varName)),
+//                                "$sp");
+//                        mipsVisitor.addMipsCode(loadNewReg);
+//                    }
+//                }
+//
+//                return globalReg;
+//            }
+//        }
+//
+//        String globalReg = getLongestNotUsedGlobalReg();
+//        setRecentLyUsedGlobalReg(globalReg);
+//        String globalVarName = globalRegToVarMap.get(globalReg);
+//
+////        System.err.println(globalReg);
+////        System.err.println(globalVarName);
+//        int offset = varAddressOffset.getVarOffset(globalVarName);
+//        MipsCode mipsCode = MipsCode.generateSW(globalReg, String.valueOf(offset), "$sp");
+//        mipsVisitor.addMipsCode(mipsCode);
+//
+//        varToGlobalRegMap.remove(globalVarName);
+//        varToGlobalRegMap.put(varName, globalReg);
+//        globalRegToVarMap.put(globalReg, varName);
+//
+//
+//
+//        if (load) {
+//            if (mipsVisitor.varIsGlobal(varName)) {
+//                MipsCode loadNewReg =
+//                    MipsCode.generateLW(globalReg,
+//                        varName,
+//                        "$0");
+//                mipsVisitor.addMipsCode(loadNewReg);
+//            } else {
+//                MipsCode loadNewReg =
+//                    MipsCode.generateLW(globalReg,
+//                        String.valueOf(varAddressOffset.getVarOffset(varName)),
+//                        "$sp");
+//                mipsVisitor.addMipsCode(loadNewReg);
+//            }
+//        }
+//
+//        return globalReg;
+//    }
 
     //得到寄存器，并把其中的值写回内存
     public String getTempReg(boolean isNumber, VarAddressOffset varAddressOffset,
@@ -273,7 +232,7 @@ public class RegisterPool {
         setRecentLyUsedTempReg(tempReg);
 
         if (tempRegToVarMap.containsKey(tempReg)) {
-            String tempVarName = tempRegToVarMap.get(tempReg);
+            Operand tempVarName = tempRegToVarMap.get(tempReg);
             int offset = varAddressOffset.getVarOffset(tempVarName);
             MipsCode mipsCode = MipsCode.generateSW(tempReg, String.valueOf(offset), "$sp");
             mipsVisitor.addMipsCode(mipsCode);
@@ -286,23 +245,12 @@ public class RegisterPool {
 
     public void clearSpecialReg(String reg, VarAddressOffset varAddressOffset,
                                 MipsVisitor mipsVisitor) {
-        if (globalRegs.contains(reg)) {
-            setRecentLyUsedGlobalReg(reg);
-            if (!globalRegToVarMap.containsKey(reg)) {
-                return;
-            }
-            String globalVarName = tempRegToVarMap.get(reg);
-            int offset = varAddressOffset.getVarOffset(globalVarName);
-            MipsCode mipsCode = MipsCode.generateSW(reg, String.valueOf(offset), "$sp");
-            mipsVisitor.addMipsCode(mipsCode);
-            varToGlobalRegMap.remove(globalVarName);
-            globalRegToVarMap.remove(reg);
-        } else if (tempRegs.contains(reg)) {
+        if (tempRegs.contains(reg)) {
             setRecentLyUsedTempReg(reg);
             if (!tempRegToVarMap.containsKey(reg)) {
                 return;
             }
-            String tempVarName = tempRegToVarMap.get(reg);
+            Operand tempVarName = tempRegToVarMap.get(reg);
             int offset = varAddressOffset.getVarOffset(tempVarName);
             MipsCode mipsCode = MipsCode.generateSW(reg, String.valueOf(offset), "$sp");
             mipsVisitor.addMipsCode(mipsCode);
@@ -311,12 +259,15 @@ public class RegisterPool {
         }
     }
 
-    public String allocateRegToVarNotLoad(String varName, VarAddressOffset varAddressOffset,
+    public String allocateRegToVarNotLoad(Operand operand, VarAddressOffset varAddressOffset,
                                           MipsVisitor mipsVisitor) {
-        if (varName.startsWith("t@")) {
-            return allocateTempRegToVar(varName, varAddressOffset, mipsVisitor, false);
+        if (operand.isTemp()) {
+            return allocateTempRegToVar(operand, varAddressOffset, mipsVisitor, false);
         } else {
-            return allocateGlobalRegToVar(varName, varAddressOffset, mipsVisitor, false);
+            if (operand.isAllocatedReg()) {
+                return operand.getReg();
+            }
+            return allocateTempRegToVar(operand, varAddressOffset, mipsVisitor, false);
         }
     }
 
@@ -327,21 +278,15 @@ public class RegisterPool {
         usedTempRegs = new HashSet<>();
     }
 
-    public void clearAllGlobalRegs() {
-        globalRegToVarMap = new HashMap<>();
-        varToGlobalRegMap = new HashMap<>();
-        LRUGlobalRegs = new LinkedList<>();
-    }
-
-    public ArrayList<String> getTempRegs() {
-        return tempRegs;
-    }
-
-    public ArrayList<String> getGlobalRegs() {
-        return globalRegs;
-    }
-
     public ArrayList<String> getUsedTempRegs() {
         return new ArrayList<>(tempRegToVarMap.keySet());
+    }
+
+    public HashMap<Operand, String> getVarToTempRegMap() {
+        return new HashMap<>(varToTempRegMap);
+    }
+
+    public ArrayList<Operand> getVarInReg() {
+        return new ArrayList<>(tempRegToVarMap.values());
     }
 }

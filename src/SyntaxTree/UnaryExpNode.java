@@ -102,7 +102,7 @@ public class UnaryExpNode extends ParserNode implements Serializable {
                     intermediateVisitor.addIntermediateCode(functionPushCode);
                 }
             }
-            Operand target = new Operand(ident.getValue(), Operand.OperandType.ADDRESS);
+            Operand target = Operand.getNewOperand(ident.getValue(), Operand.OperandType.ADDRESS);
             FunctionCallCode functionCallCode =
                 new FunctionCallCode(target);
             intermediateVisitor.addIntermediateCode(functionCallCode);
@@ -113,19 +113,22 @@ public class UnaryExpNode extends ParserNode implements Serializable {
                 System.out.println("error in find item in unaryexpNode");
             }
             if (item.getFuncType() == TokenType.INTTK) {
-                Operand temp = new Operand(TCode.genNewT(), Operand.OperandType.VAR);
+                Operand temp = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
                 intermediateVisitor.addIntermediateCode(
-                    new AssignCode(temp, new Operand("RET", Operand.OperandType.VAR)));
+                    new AssignCode(temp, Operand.getNewOperand("RET", Operand.OperandType.VAR)));
                 return temp;
             } else {
                 return null;
             }
         } else if (hasUnaryOp()) {
             Operand src1 = unaryExpNode.generateMidCodeAndReturnTempVar(intermediateVisitor);
-            Operand target = new Operand(TCode.genNewT(), Operand.OperandType.VAR);
+            Operand target = null;
+            if (unaryOp != TokenType.PLUS) {
+                target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
+            }
             Operator operator;
             if (unaryOp == TokenType.PLUS) {
-                operator = Operator.PLUS;
+                return src1;
             } else if (unaryOp == TokenType.MINU) {
                 operator = Operator.NEG;
             } else {

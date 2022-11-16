@@ -68,7 +68,7 @@ public class PrimaryExpNode extends ParserNode implements Serializable {
             return operand;
         } else {
             String number = String.valueOf(numberNode.getConstVal());
-            return new Operand(number, Operand.OperandType.NUMBER);
+            return Operand.getNewOperand(number, Operand.OperandType.NUMBER);
         }
     }
 }

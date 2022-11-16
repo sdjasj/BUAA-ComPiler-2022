@@ -53,7 +53,7 @@ public class AddExpNode extends ParserNode {
         } else {
             Operand src1 = addExpNode.generateMidCodeAndReturnTempVar(intermediateVisitor);
             Operand src2 = mulExpNode.generateMidCodeAndReturnTempVar(intermediateVisitor);
-            Operand target = new Operand(TCode.genNewT(), Operand.OperandType.VAR);
+            Operand target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
             Operator operator = null;
             if (op == TokenType.PLUS) {
                 operator = Operator.ADD;

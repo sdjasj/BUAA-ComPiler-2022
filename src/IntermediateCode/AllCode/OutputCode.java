@@ -12,7 +12,7 @@ public class OutputCode extends IntermediateCode {
     private boolean isInt;
 
     public OutputCode(Operand target, boolean isInt) {
-        super(target, null, null, Operator.PRINTF);
+        super(null, target, null, Operator.PRINTF);
         this.isInt = isInt;
     }
 
@@ -25,14 +25,12 @@ public class OutputCode extends IntermediateCode {
                        RegisterPool registerPool) {
         if (isInt) {
             registerPool.clearSpecialReg("$a0", varAddressOffset, mipsVisitor);
-            if (target.isNUMBER()) {
-                mipsVisitor.addMipsCode(MipsCode.generateLi("$a0", target.getName()));
-            } else if (mipsVisitor.varIsGlobal(target.getName())) {
-                mipsVisitor.addMipsCode(MipsCode.generateLW("$a0", target.getName(), "$0"));
+            if (source1.isNUMBER()) {
+                mipsVisitor.addMipsCode(MipsCode.generateLi("$a0", source1.getName()));
+            } else if (mipsVisitor.varIsGlobal(source1.getName())) {
+                mipsVisitor.addMipsCode(MipsCode.generateLW("$a0", source1.getName(), "$0"));
             } else {
-                String targetReg =
-                    registerPool.allocateRegToVarLoad(target.getName(), varAddressOffset,
-                        mipsVisitor);
+                String targetReg = getSrcReg(source1, varAddressOffset, mipsVisitor, registerPool);
                 mipsVisitor.addMipsCode(MipsCode.generateMOVE("$a0", targetReg));
             }
             //v0 is need to store?
@@ -40,22 +38,22 @@ public class OutputCode extends IntermediateCode {
             mipsVisitor.addMipsCode(MipsCode.generateSYSCALL());
         } else {
             registerPool.clearSpecialReg("$a0", varAddressOffset, mipsVisitor);
-            mipsVisitor.addMipsCode(MipsCode.generateLA(target.getName(), "$a0"));
+            mipsVisitor.addMipsCode(MipsCode.generateLA(source1.getName(), "$a0"));
             //v0 is need to store?
             mipsVisitor.addMipsCode(MipsCode.generateLi("$v0", "4"));
             mipsVisitor.addMipsCode(MipsCode.generateSYSCALL());
         }
 
         //comment
-        mipsVisitor.addMipsCode(MipsCode.generateComment("printf " + target.getName()));
+        mipsVisitor.addMipsCode(MipsCode.generateComment("printf " + source1.getName()));
     }
 
     @Override
     public void output() {
         if (isInt) {
-            System.out.println(op + " INT " + target);
+            System.out.println(op + " INT " + source1);
         } else {
-            System.out.println(op + " STR " + target);
+            System.out.println(op + " STR " + source1);
         }
     }
 }

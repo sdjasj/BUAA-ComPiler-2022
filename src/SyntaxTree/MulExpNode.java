@@ -55,7 +55,7 @@ public class MulExpNode extends ParserNode {
         } else {
             Operand src1 = mulExpNode.generateMidCodeAndReturnTempVar(intermediateVisitor);
             Operand src2 = unaryExpNode.generateMidCodeAndReturnTempVar(intermediateVisitor);
-            Operand target = new Operand(TCode.genNewT(), Operand.OperandType.VAR);
+            Operand target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
             Operator operator = null;
             if (op == TokenType.MULT) {
                 operator = Operator.MUL;

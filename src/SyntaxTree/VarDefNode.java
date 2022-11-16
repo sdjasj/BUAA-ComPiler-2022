@@ -84,7 +84,7 @@ public class VarDefNode extends ParserNode {
             if (dimensionLength.size() == 0) {
                 //非数组变量
                 String name =  TCode.reName(ident.getValue(), blockDepth);
-                Operand target = new Operand(name, Operand.OperandType.VAR);
+                Operand target = Operand.getNewOperand(name, Operand.OperandType.VAR);
                 DeclCode declCode =
                     new DeclCode(target, new ArrayList<>());
                 intermediateVisitor.addIntermediateCode(declCode);
@@ -95,17 +95,17 @@ public class VarDefNode extends ParserNode {
                 }
             } else {
                 String name =  TCode.reName(ident.getValue(), blockDepth);
-                Operand target = new Operand(name, Operand.OperandType.ADDRESS);
+                Operand target = Operand.getNewOperand(name, Operand.OperandType.ADDRESS);
                 DeclCode declCode = new DeclCode(target, dimensionLength);
                 intermediateVisitor.addIntermediateCode(declCode);
                 if (hasInitval()) {
                     ArrayList<Operand> operands =
                         initValNode.generateMidCodeAndReturnTempVarAsArray(intermediateVisitor);
                     for (int i = 0; i < operands.size(); i++) {
-                        Operand t = new Operand(TCode.genNewT(), Operand.OperandType.VAR);
+                        Operand t = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
                         intermediateVisitor.addIntermediateCode(new AssignCode(t, operands.get(i)));
                         MemoryCode memoryCode = new MemoryCode(t, target,
-                            new Operand(String.valueOf(i * 4), Operand.OperandType.NUMBER),
+                            Operand.getNewOperand(String.valueOf(i * 4), Operand.OperandType.NUMBER),
                             Operator.STORE);
                         intermediateVisitor.addIntermediateCode(memoryCode);
                     }

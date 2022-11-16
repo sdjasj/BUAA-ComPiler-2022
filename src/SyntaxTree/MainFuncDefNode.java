@@ -18,11 +18,11 @@ public class MainFuncDefNode extends ParserNode {
 
     public void generateIntermediate(IntermediateVisitor intermediateVisitor) {
         intermediateVisitor.changeNewFunction(true, "main");
-        FunctionCode functionCode = new FunctionCode(new Operand("main", Operand.OperandType.ADDRESS));
+        FunctionCode functionCode = new FunctionCode(Operand.getNewOperand("main", Operand.OperandType.ADDRESS));
         intermediateVisitor.addIntermediateCode(functionCode);
         blockNode.generateIntermediate(intermediateVisitor, null);
         FunctionEndCode functionEndCode =
-            new FunctionEndCode(new Operand("main", Operand.OperandType.ADDRESS));
+            new FunctionEndCode(Operand.getNewOperand("main", Operand.OperandType.ADDRESS));
         intermediateVisitor.addIntermediateCode(functionEndCode);
     }
 }

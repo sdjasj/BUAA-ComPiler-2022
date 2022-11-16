@@ -7,6 +7,9 @@ import MipsCode.MipsCode.MipsCode;
 import MipsCode.MipsVisitor;
 import MipsCode.RegisterPool;
 import MipsCode.VarAddressOffset;
+import Tool.Pair;
+
+import java.util.HashSet;
 
 public class MemoryCode extends IntermediateCode {
 
@@ -15,27 +18,35 @@ public class MemoryCode extends IntermediateCode {
     }
 
     @Override
+    public Operand getLeftVal() {
+        return null;
+    }
+
+    @Override
+    public Pair<Operand, Operand> getRightVal() {
+        return new Pair<Operand, Operand>(target, source2);
+    }
+
+    @Override
+    public HashSet<Operand> getUsedSet() {
+        HashSet<Operand> usedSet = new HashSet<>();
+        if (target != null && target.isLocal()) {
+            usedSet.add(target);
+        }
+        if (source2 != null && source2.isLocal()) {
+            usedSet.add(source2);
+        }
+        return usedSet;
+    }
+
+    @Override
     public void toMips(MipsVisitor mipsVisitor, VarAddressOffset varAddressOffset,
                        RegisterPool registerPool) {
         String targetReg;
         if (op == Operator.LOAD) {
-            targetReg = registerPool.allocateRegToVarNotLoad(target.getName(), varAddressOffset, mipsVisitor);
+            targetReg = registerPool.allocateRegToVarNotLoad(target, varAddressOffset, mipsVisitor);
         } else {
-            if (target.isNUMBER()) {
-                //存储的为数字
-                targetReg = registerPool.getTempReg(true, varAddressOffset, mipsVisitor);
-                mipsVisitor.addMipsCode(MipsCode.generateLi(targetReg, target.getName()));
-            } else {
-                //存储的为变量
-                if (mipsVisitor.varIsGlobal(target.getName())) {
-                    targetReg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor);
-                    mipsVisitor.addMipsCode(MipsCode.generateLW(targetReg, target.getName(), "$0"));
-                } else {
-                    targetReg =
-                        registerPool.allocateRegToVarLoad(target.getName(), varAddressOffset,
-                            mipsVisitor);
-                }
-            }
+            targetReg = getSrcReg(target, varAddressOffset, mipsVisitor, registerPool);
         }
 
         String source2Reg = getSrcReg(source2, varAddressOffset, mipsVisitor, registerPool);
@@ -63,15 +74,15 @@ public class MemoryCode extends IntermediateCode {
         } else {
             //局部变量
             String tempReg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor);
-            if (varAddressOffset.isParam(source1.getName())) {
+            if (varAddressOffset.isParam(source1)) {
                 //参数
                 mipsVisitor.addMipsCode(MipsCode.generateLW(tempReg,
-                    String.valueOf(varAddressOffset.getArrayOffset(source1.getName(), 0)), "$sp"));
+                    String.valueOf(varAddressOffset.getArrayOffset(source1, 0)), "$sp"));
                 mipsVisitor.addMipsCode(MipsCode.generateADDU(source2Reg, source2Reg, tempReg));
             } else {
                 //普通局部变量
                 mipsVisitor.addMipsCode(MipsCode.generateADDIU(tempReg, "$sp",
-                    String.valueOf(varAddressOffset.getArrayOffset(source1.getName(), 0))));
+                    String.valueOf(varAddressOffset.getArrayOffset(source1, 0))));
                 mipsVisitor.addMipsCode(MipsCode.generateADDU(source2Reg, source2Reg, tempReg));
             }
 

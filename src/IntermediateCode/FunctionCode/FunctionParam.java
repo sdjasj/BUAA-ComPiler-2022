@@ -6,8 +6,10 @@ import IntermediateCode.Operand;
 import MipsCode.MipsVisitor;
 import MipsCode.RegisterPool;
 import MipsCode.VarAddressOffset;
+import Tool.Pair;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class FunctionParam extends IntermediateCode {
     public enum ParamType {
@@ -23,6 +25,16 @@ public class FunctionParam extends IntermediateCode {
     public FunctionParam(Operand name, ArrayList<Integer> dimension) {
         super(name, null, null, Operator.PARAM);
         this.dimension = dimension;
+    }
+
+    @Override
+    public Operand getLeftVal() {
+        return null;
+    }
+
+    @Override
+    public Pair<Operand, Operand> getRightVal() {
+        return null;
     }
 
     @Override

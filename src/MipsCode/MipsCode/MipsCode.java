@@ -78,7 +78,12 @@ public class MipsCode {
         return mipsCode;
     }
 
-    public static MipsCode generateDIV(String source1, String source2) {
+    public static MipsCode generateDIV(String target, String source1, String source2) {
+        MipsCode mipsCode = new MipsCode("div", target, source1, source2);
+        return mipsCode;
+    }
+
+    public static MipsCode generateDIVMOD(String source1, String source2) {
         MipsCode mipsCode = new MipsCode("div", null, source1, source2);
         return mipsCode;
     }
@@ -113,6 +118,15 @@ public class MipsCode {
         return mipsCode;
     }
 
+    public static MipsCode generateMUL(String target, String source1, String source2) {
+        MipsCode mipsCode = new MipsCode("mul", target, source1, source2);
+        return mipsCode;
+    }
+
+
+
+
+
     public void output() {
         if (codeName.equals("lw")) {
             System.out.println("lw " + target + ", " + source1 + "(" + source2 + ")");
@@ -141,7 +155,11 @@ public class MipsCode {
         } else if (codeName.equals("mfhi")) {
             System.out.println("mfhi " + target);
         } else if (codeName.equals("div")) {
-            System.out.println("div " + source1 + ", " + source2);
+            if (target == null) {
+                System.out.println("div " + source1 + ", " + source2);
+            } else {
+                System.out.println("div " + target + ", " + source1 + ", " + source2);
+            }
         } else if (codeName.equals("syscall")) {
             System.out.println("syscall");
         } else if (codeName.equals("jal")) {
@@ -154,6 +172,8 @@ public class MipsCode {
             System.out.println(target + ":");
         } else if (codeName.equals("j")) {
             System.out.println("j " + target);
+        } else if (codeName.equals("mul")) {
+            System.out.println("mul " + target + ", " + source1 + ", " + source2);
         }
     }
 }

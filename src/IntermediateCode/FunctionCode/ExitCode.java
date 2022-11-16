@@ -6,11 +6,26 @@ import MipsCode.MipsCode.MipsCode;
 import MipsCode.MipsVisitor;
 import MipsCode.RegisterPool;
 import MipsCode.VarAddressOffset;
+import IntermediateCode.Operator;
+import IntermediateCode.Operand;
+import Tool.Pair;
+
+import java.util.List;
 
 public class ExitCode extends IntermediateCode {
 
     public ExitCode() {
         super(null, null, null, Operator.EXIT);
+    }
+
+    @Override
+    public Operand getLeftVal() {
+        return null;
+    }
+
+    @Override
+    public Pair<Operand, Operand> getRightVal() {
+        return null;
     }
 
     @Override

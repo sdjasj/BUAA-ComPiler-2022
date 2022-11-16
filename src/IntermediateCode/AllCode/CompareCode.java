@@ -50,7 +50,7 @@ public class CompareCode extends IntermediateCode {
 
         //目标只能是局部变量
         String targetReg =
-            registerPool.allocateRegToVarNotLoad(target.getName(), varAddressOffset, mipsVisitor);
+            registerPool.allocateRegToVarNotLoad(target, varAddressOffset, mipsVisitor);
 
         String mipsOp = null;
         if (op == Operator.GT) {

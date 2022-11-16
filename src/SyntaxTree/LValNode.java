@@ -120,21 +120,21 @@ public class LValNode extends ParserNode {
         if (dimension == 0) {
 
             if (item.getDimension() > dimension) {
-                return new Operand(TCode.reName(name, item.getBlockDepth()),
+                return Operand.getNewOperand(TCode.reName(name, item.getBlockDepth()),
                     Operand.OperandType.ADDRESS);
             } else {
                 //非数组
                 //常量
                 if (item.isConst()) {
-                    return new Operand(String.valueOf(item.getConstVarInitVal()),
+                    return Operand.getNewOperand(String.valueOf(item.getConstVarInitVal()),
                         Operand.OperandType.NUMBER);
                 }
                 //变量
-                return new Operand(TCode.reName(name, item.getBlockDepth()), Operand.OperandType.VAR);
+                return Operand.getNewOperand(TCode.reName(name, item.getBlockDepth()), Operand.OperandType.VAR);
             }
         }
 
-        //变量数组
+
         //数组取一维值直接返回
         if (dimension == 1) {
             //数组取一维值，形如a[x], src1 = x,但a可能是多维数组
@@ -143,16 +143,16 @@ public class LValNode extends ParserNode {
                 Operand src2 =
                     dimensionOfExp.get(0).generateMidCodeAndReturnTempVar(intermediateVisitor);
 
-                Operand temp = new Operand(TCode.genNewT(), Operand.OperandType.VAR);
+                Operand temp = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
 
                 intermediateVisitor.addIntermediateCode(new CalculateCode(temp, src2,
-                    new Operand(String.valueOf(item.getDimensionLength(1) * 4),
+                    Operand.getNewOperand(String.valueOf(item.getDimensionLength(1) * 4),
                         Operand.OperandType.NUMBER), Operator.MUL));
                 //bug
                 src2 = temp;
-                Operand target = new Operand(TCode.genNewT(), Operand.OperandType.ADDRESS);
+                Operand target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.ADDRESS);
                 Operand src1 =
-                    new Operand(TCode.reName(name, item.getBlockDepth()), Operand.OperandType.ADDRESS);
+                    Operand.getNewOperand(TCode.reName(name, item.getBlockDepth()), Operand.OperandType.ADDRESS);
                 CalculateCode calculateCode = new CalculateCode(target, src1, src2, Operator.ADD);
                 intermediateVisitor.addIntermediateCode(calculateCode);
 
@@ -160,17 +160,18 @@ public class LValNode extends ParserNode {
 
                 return target;
             } else {
+                //变量数组
                 Operand src2 =
                     dimensionOfExp.get(0).generateMidCodeAndReturnTempVar(intermediateVisitor);
-                Operand temp = new Operand(TCode.genNewT(), Operand.OperandType.VAR);
+                Operand temp = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
                 intermediateVisitor.addIntermediateCode(
-                    new CalculateCode(temp, src2, new Operand("4",
+                    new CalculateCode(temp, src2, Operand.getNewOperand("4",
                         Operand.OperandType.NUMBER), Operator.MUL));
                 src2 = temp;
 
-                Operand target = new Operand(TCode.genNewT(), Operand.OperandType.VAR);
+                Operand target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
                 Operand src1 =
-                    new Operand(TCode.reName(name, item.getBlockDepth()), Operand.OperandType.ADDRESS);
+                    Operand.getNewOperand(TCode.reName(name, item.getBlockDepth()), Operand.OperandType.ADDRESS);
                 MemoryCode memoryCode = new MemoryCode(target, src1, src2, Operator.LOAD);
                 intermediateVisitor.addIntermediateCode(memoryCode);
                 return target;
@@ -179,12 +180,12 @@ public class LValNode extends ParserNode {
 
         //array name
         String arrayName = TCode.reName(ident.getValue(), item.getBlockDepth());
-        Operand target = new Operand(TCode.genNewT(), Operand.OperandType.VAR);
+        Operand target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
         Operand src1 = dimensionOfExp.get(0).generateMidCodeAndReturnTempVar(intermediateVisitor);
         int dimensionLength = item.getDimensionLength(1);
         CalculateCode calculateCode =
             new CalculateCode(target, src1,
-                new Operand(String.valueOf(dimensionLength), Operand.OperandType.NUMBER),
+                Operand.getNewOperand(String.valueOf(dimensionLength), Operand.OperandType.NUMBER),
                 Operator.MUL
             );
         intermediateVisitor.addIntermediateCode(calculateCode);
@@ -196,50 +197,50 @@ public class LValNode extends ParserNode {
 
             if (dimensionLength == 0) {
                 if (item.getDimension() > dimension) {
-                    target = new Operand(TCode.genNewT(), Operand.OperandType.VAR);
+                    target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
                     calculateCode = new CalculateCode(target, src1, src2, Operator.ADD);
                     intermediateVisitor.addIntermediateCode(calculateCode);
 
 
-                    Operand temp = new Operand(TCode.genNewT(), Operand.OperandType.VAR);
+                    Operand temp = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
                     intermediateVisitor.addIntermediateCode(
-                        new CalculateCode(temp, target, new Operand("4",
+                        new CalculateCode(temp, target, Operand.getNewOperand("4",
                             Operand.OperandType.NUMBER), Operator.MUL));
 
 
 
-                    target = new Operand(TCode.genNewT(), Operand.OperandType.ADDRESS);
+                    target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.ADDRESS);
                     CalculateCode calculateCode1 =
-                        new CalculateCode(target, new Operand(arrayName, Operand.OperandType.ADDRESS),
+                        new CalculateCode(target, Operand.getNewOperand(arrayName, Operand.OperandType.ADDRESS),
                             temp, Operator.ADD);
                     intermediateVisitor.addIntermediateCode(calculateCode1);
                     return target;
                 } else {
-                    target = new Operand(TCode.genNewT(), Operand.OperandType.VAR);
+                    target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
                     calculateCode = new CalculateCode(target, src1, src2, Operator.ADD);
                     intermediateVisitor.addIntermediateCode(calculateCode);
 
-                    Operand temp = new Operand(TCode.genNewT(), Operand.OperandType.VAR);
+                    Operand temp = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
                     intermediateVisitor.addIntermediateCode(
-                        new CalculateCode(temp, target, new Operand("4",
+                        new CalculateCode(temp, target, Operand.getNewOperand("4",
                             Operand.OperandType.NUMBER), Operator.MUL));
 
-                    target = new Operand(TCode.genNewT(), Operand.OperandType.VAR);
+                    target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
                     MemoryCode memoryCode =
-                        new MemoryCode(target, new Operand(arrayName, Operand.OperandType.ADDRESS),
+                        new MemoryCode(target, Operand.getNewOperand(arrayName, Operand.OperandType.ADDRESS),
                             temp, Operator.LOAD);
                     intermediateVisitor.addIntermediateCode(memoryCode);
                     return target;
                 }
             } else {
-                target = new Operand(TCode.genNewT(), Operand.OperandType.VAR);
+                target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
                 calculateCode =
                     new CalculateCode(target, src2,
-                        new Operand(String.valueOf(dimensionLength), Operand.OperandType.NUMBER),
+                        Operand.getNewOperand(String.valueOf(dimensionLength), Operand.OperandType.NUMBER),
                         Operator.MUL);
                 intermediateVisitor.addIntermediateCode(calculateCode);
                 src2 = target;
-                target = new Operand(TCode.genNewT(), Operand.OperandType.VAR);
+                target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
                 calculateCode = new CalculateCode(target, src1, src2, Operator.ADD);
                 intermediateVisitor.addIntermediateCode(calculateCode);
                 src1 = target;
@@ -264,7 +265,7 @@ public class LValNode extends ParserNode {
         if (dimension == 0) {
             //非数组
             return new Pair<>(
-                new Operand(TCode.reName(name, item.getBlockDepth()), Operand.OperandType.VAR),
+                Operand.getNewOperand(TCode.reName(name, item.getBlockDepth()), Operand.OperandType.VAR),
                 null);
         }
 
@@ -275,22 +276,22 @@ public class LValNode extends ParserNode {
             //得到数组偏移
             Operand src2 =
                 dimensionOfExp.get(0).generateMidCodeAndReturnTempVar(intermediateVisitor);
-            Operand temp = new Operand(TCode.genNewT(), Operand.OperandType.VAR);
+            Operand temp = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
             intermediateVisitor.addIntermediateCode(
-                new CalculateCode(temp, src2, new Operand("4",
+                new CalculateCode(temp, src2, Operand.getNewOperand("4",
                     Operand.OperandType.NUMBER), Operator.MUL));
             src2 = temp;
 
             Operand src1 =
-                new Operand(TCode.reName(name, item.getBlockDepth()), Operand.OperandType.ADDRESS);
+                Operand.getNewOperand(TCode.reName(name, item.getBlockDepth()), Operand.OperandType.ADDRESS);
             return new Pair<>(src1, src2);
         }
-        Operand target = new Operand(TCode.genNewT(), Operand.OperandType.VAR);
+        Operand target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
         Operand src1 = dimensionOfExp.get(0).generateMidCodeAndReturnTempVar(intermediateVisitor);
         int dimensionLength = item.getDimensionLength(1);
         CalculateCode calculateCode =
             new CalculateCode(target, src1,
-                new Operand(String.valueOf(dimensionLength), Operand.OperandType.NUMBER),
+                Operand.getNewOperand(String.valueOf(dimensionLength), Operand.OperandType.NUMBER),
                 Operator.MUL
             );
         intermediateVisitor.addIntermediateCode(calculateCode);
@@ -302,28 +303,28 @@ public class LValNode extends ParserNode {
             if (dimensionLength == 0) {
 
 
-                target = new Operand(TCode.genNewT(), Operand.OperandType.VAR);
+                target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
                 calculateCode = new CalculateCode(target, src1, src2, Operator.ADD);
                 intermediateVisitor.addIntermediateCode(calculateCode);
 
                 intermediateVisitor.addIntermediateCode(
-                    new CalculateCode(target, target, new Operand("4",
+                    new CalculateCode(target, target, Operand.getNewOperand("4",
                         Operand.OperandType.NUMBER), Operator.MUL));
 
                 return new Pair<>(
-                    new Operand(TCode.reName(name, item.getBlockDepth()),
+                    Operand.getNewOperand(TCode.reName(name, item.getBlockDepth()),
                         Operand.OperandType.ADDRESS),
                     target);
 
             } else {
-                target = new Operand(TCode.genNewT(), Operand.OperandType.VAR);
+                target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
                 calculateCode =
                     new CalculateCode(target, src2,
-                        new Operand(String.valueOf(dimensionLength), Operand.OperandType.NUMBER),
+                        Operand.getNewOperand(String.valueOf(dimensionLength), Operand.OperandType.NUMBER),
                         Operator.MUL);
                 intermediateVisitor.addIntermediateCode(calculateCode);
                 src2 = target;
-                target = new Operand(TCode.genNewT(), Operand.OperandType.VAR);
+                target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
                 calculateCode = new CalculateCode(target, src1, src2, Operator.ADD);
                 intermediateVisitor.addIntermediateCode(calculateCode);
                 src1 = target;

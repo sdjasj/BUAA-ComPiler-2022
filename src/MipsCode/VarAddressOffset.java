@@ -1,14 +1,17 @@
 package MipsCode;
 
+import IntermediateCode.ConflictGraph;
+import IntermediateCode.Operand;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 
 public class VarAddressOffset {
-    private HashMap<String, Integer> varOffsetMap;
+    private HashMap<Operand, Integer> varOffsetMap;
     private HashMap<String, Integer> regOffsetMap;
     private int curOffset;
-    private HashSet<String> params;
+    private HashSet<Operand> params;
 
     public VarAddressOffset(int curOffset) {
         this.varOffsetMap = new HashMap<>();
@@ -17,17 +20,17 @@ public class VarAddressOffset {
         this.params = new HashSet<>();
     }
 
-    public void addVar(String name, int offset) {
+    public void addVar(Operand name, int offset) {
         curOffset += offset;
         varOffsetMap.put(name, curOffset);
     }
 
-    public void addParam(String name, int offset) {
+    public void addParam(Operand name, int offset) {
         addVar(name, offset);
         params.add(name);
     }
 
-    public boolean isParam(String name) {
+    public boolean isParam(Operand name) {
         return params.contains(name);
     }
 
@@ -43,22 +46,23 @@ public class VarAddressOffset {
         }
     }
 
-    public void addGlobalRegsAddress(RegisterPool registerPool) {
-        ArrayList<String> regs = registerPool.getGlobalUsedRegs();
+    public void addGlobalRegsAddress(ConflictGraph conflictGraph) {
+        ArrayList<String> regs = new ArrayList<>(conflictGraph.getUsedGlobalRegs());
         addRegList(regs);
     }
 
-    public void addAllRegs(RegisterPool registerPool) {
-        ArrayList<String> globalRegs = registerPool.getGlobalRegs();
-        addRegList(globalRegs);
-    }
-
-    public int getVarOffset(String name) {
+    public int getVarOffset(Operand name) {
 //        System.err.println(name);
         return curOffset - varOffsetMap.get(name);
     }
 
-    public int getArrayOffset(String name, int offset) {
+    public int getArrayOffset(Operand name, int offset) {
+//        System.err.println(name.getName() + " " + name.getOperandType());
+//        varOffsetMap.forEach((k,v) -> {
+//            if (k.getName().equals(name.getName())) {
+//                System.err.println(k.getName() + " " + k.getOperandType());
+//            }
+//        });
         return curOffset - varOffsetMap.get(name) + offset * 4;
     }
 

@@ -39,7 +39,7 @@ public class EqExpNode extends ParserNode {
                 } else if (op == TokenType.NEQ) {
                     ICOP = Operator.BNE;
                 }
-                target = new Operand(trueLabel, Operand.OperandType.ADDRESS);
+                target = Operand.getNewOperand(trueLabel, Operand.OperandType.ADDRESS);
             } else {
                 if (op == TokenType.EQL) {
                     //==
@@ -47,7 +47,7 @@ public class EqExpNode extends ParserNode {
                 } else if (op == TokenType.NEQ) {
                     ICOP = Operator.BEQ;
                 }
-                target = new Operand(falseLabel, Operand.OperandType.ADDRESS);
+                target = Operand.getNewOperand(falseLabel, Operand.OperandType.ADDRESS);
             }
             intermediateVisitor.addIntermediateCode(new BranchCode(target, src1, src2, ICOP));
         } else {
@@ -59,7 +59,7 @@ public class EqExpNode extends ParserNode {
         if (eqExpNode != null) {
             Operand src1 = eqExpNode.getEqExpResult(intermediateVisitor);
             Operand src2 = relExpNode.getRelExpResult(intermediateVisitor);
-            Operand target = new Operand(TCode.genNewT(), Operand.OperandType.VAR);
+            Operand target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
             Operator ICOP = null;
             if (op == TokenType.EQL) {
                 //==

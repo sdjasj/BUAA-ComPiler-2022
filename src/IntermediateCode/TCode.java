@@ -1,5 +1,7 @@
 package IntermediateCode;
 
+import java.util.HashMap;
+
 public class TCode {
     public static int cnt = 0;
     public static int cntStr = 0;

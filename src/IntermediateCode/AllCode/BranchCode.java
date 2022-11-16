@@ -4,16 +4,20 @@ import IntermediateCode.IntermediateCode;
 import IntermediateCode.Operand;
 import IntermediateCode.Operator;
 import MipsCode.MipsCode.MipsBranchCode;
-import MipsCode.MipsCode.MipsCode;
 import MipsCode.MipsVisitor;
 import MipsCode.RegisterPool;
 import MipsCode.VarAddressOffset;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class BranchCode extends IntermediateCode {
 
     public BranchCode(Operand target, Operand source1, Operand source2, Operator op) {
         super(target, source1, source2, op);
     }
+
+
 
     @Override
     public void output() {

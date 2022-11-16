@@ -7,10 +7,23 @@ import MipsCode.MipsCode.MipsCode;
 import MipsCode.MipsVisitor;
 import MipsCode.RegisterPool;
 import MipsCode.VarAddressOffset;
+import Tool.Pair;
+
+import java.util.List;
 
 public class FunctionEndCode extends IntermediateCode {
     public FunctionEndCode(Operand target) {
         super(target, null, null, Operator.FUNC_END);
+    }
+
+    @Override
+    public Operand getLeftVal() {
+        return null;
+    }
+
+    @Override
+    public Pair<Operand, Operand> getRightVal() {
+        return null;
     }
 
     @Override
