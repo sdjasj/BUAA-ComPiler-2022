@@ -31,10 +31,6 @@ public class MipsVisitor {
         globalStrInits.put(name, globalStrInit);
     }
 
-    public boolean varIsGlobal(String name) {
-        return globalVarInits.containsKey(name) || globalArrayInits.containsKey(name);
-    }
-
     public void addMipsCode(MipsCode mipsCode) {
 //        mipsCode.output();
         mipsCodes.add(mipsCode);

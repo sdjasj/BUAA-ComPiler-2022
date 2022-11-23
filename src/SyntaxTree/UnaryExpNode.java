@@ -14,6 +14,7 @@ import Lexer.TokenType;
 import MySymbolTable.SymbolTable;
 import MySymbolTable.SymbolTableItem;
 import MySymbolTable.SymbolType;
+import Tool.Optimizer;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -122,10 +123,6 @@ public class UnaryExpNode extends ParserNode implements Serializable {
             }
         } else if (hasUnaryOp()) {
             Operand src1 = unaryExpNode.generateMidCodeAndReturnTempVar(intermediateVisitor);
-            Operand target = null;
-            if (unaryOp != TokenType.PLUS) {
-                target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
-            }
             Operator operator;
             if (unaryOp == TokenType.PLUS) {
                 return src1;
@@ -134,6 +131,24 @@ public class UnaryExpNode extends ParserNode implements Serializable {
             } else {
                 operator = Operator.NOT;
             }
+
+            if (Optimizer.ConstOptimizer && src1.isNUMBER()) {
+                if (unaryOp == TokenType.PLUS) {
+                    return src1;
+                } else if (unaryOp == TokenType.MINU) {
+                    return Operand.getNewOperand(
+                        String.valueOf(-Integer.parseInt(src1.getName())),
+                        Operand.OperandType.NUMBER);
+                } else if (operator == Operator.NOT) {
+                    if (src1.getName().equals("0")) {
+                        return Operand.getNewOperand("1", Operand.OperandType.NUMBER);
+                    } else {
+                        return Operand.getNewOperand("0", Operand.OperandType.NUMBER);
+                    }
+                }
+            }
+
+            Operand target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
             SingleCalculateCode singleCalculateCode =
                 new SingleCalculateCode(target, src1, operator);
             intermediateVisitor.addIntermediateCode(singleCalculateCode);

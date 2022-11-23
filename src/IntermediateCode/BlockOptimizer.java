@@ -63,4 +63,11 @@ public class BlockOptimizer {
             }
         }
     }
+
+    public static void deleteDeadCode(FlowGraph flowGraph) {
+        ArrayList<BasicBlock> basicBlocks = flowGraph.getBasicBlocks();
+        for (BasicBlock basicBlock : basicBlocks) {
+            while (basicBlock.deadCodesDelete()) {}
+        }
+    }
 }

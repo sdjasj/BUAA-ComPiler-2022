@@ -5,7 +5,7 @@ import java.util.HashMap;
 public class TCode {
     public static int cnt = 0;
     public static int cntStr = 0;
-    public static int cntLable = 0;
+    public static int cntLabel = 0;
 
     public static String genNewT() {
         String target = "t@" + cnt;
@@ -24,8 +24,8 @@ public class TCode {
     }
 
     public static String genNewLable() {
-        String lable = "$lable_" + cntLable;
-        cntLable++;
+        String lable = "$lable_" + cntLabel;
+        cntLabel++;
         return lable;
     }
 }

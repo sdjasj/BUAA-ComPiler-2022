@@ -97,6 +97,7 @@ public class Function {
 
     public void basicBlockOptimize() {
         BlockOptimizer.activeVarAnalyze(flowGraph);
+        BlockOptimizer.deleteDeadCode(flowGraph);
     }
 
     public void colorAllocate() {
@@ -105,6 +106,7 @@ public class Function {
         RegisterAllocator registerAllocator = new RegisterAllocator(conflictGraph);
         registerAllocator.allocGlobalReg();
     }
+
 
     public void toMips(MipsVisitor mipsVisitor) {
         varAddressOffset = new VarAddressOffset(0);
@@ -173,7 +175,6 @@ public class Function {
                     intermediateCode.toMips(mipsVisitor, varAddressOffset, registerPool);
                 } else if (i == intermediateCodes.size() - 1) {
                     intermediateCode.toMips(mipsVisitor, varAddressOffset, registerPool);
-                    storeRegs(mipsVisitor, basicBlock);
                 } else {
                     intermediateCode.toMips(mipsVisitor, varAddressOffset, registerPool);
                 }
@@ -195,6 +196,9 @@ public class Function {
                     String.valueOf(
                         varAddressOffset.getVarOffset(varOfReg)), "$sp");
                 mipsVisitor.addMipsCode(storeUsedGlobalRegs);
+            } else if (varOfReg.isGlobal()) {
+                mipsVisitor.addMipsCode(
+                    MipsCode.generateSW(varToReg.get(varOfReg), varOfReg.getName(), "$0"));
             }
         }
 

@@ -9,6 +9,7 @@ import IntermediateCode.TCode;
 import Lexer.TokenType;
 import MySymbolTable.SymbolTable;
 import MySymbolTable.SymbolType;
+import Tool.Optimizer;
 
 //MulExp → UnaryExp | MulExp ('*' | '/' | '%') UnaryExp
 public class MulExpNode extends ParserNode {
@@ -64,6 +65,26 @@ public class MulExpNode extends ParserNode {
             } else if (op == TokenType.MOD) {
                 operator = Operator.MOD;
             }
+
+            if (Optimizer.ConstOptimizer && src1.isNUMBER() && src2.isNUMBER()) {
+                if (operator == Operator.MUL) {
+                    return Operand.getNewOperand(
+                        String.valueOf(Integer.parseInt(src1.getName()) *
+                            Integer.parseInt(src2.getName())),
+                        Operand.OperandType.NUMBER);
+                } else if (operator == Operator.DIV) {
+                    return Operand.getNewOperand(
+                        String.valueOf(Integer.parseInt(src1.getName()) /
+                            Integer.parseInt(src2.getName())),
+                        Operand.OperandType.NUMBER);
+                } else if (operator == Operator.MOD) {
+                    return Operand.getNewOperand(
+                        String.valueOf(Integer.parseInt(src1.getName()) %
+                            Integer.parseInt(src2.getName())),
+                        Operand.OperandType.NUMBER);
+                }
+            }
+
             CalculateCode calculateCode = new CalculateCode(target, src1, src2, operator);
             intermediateVisitor.addIntermediateCode(calculateCode);
             return target;

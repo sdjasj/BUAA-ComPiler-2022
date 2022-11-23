@@ -19,12 +19,20 @@ public class MemoryCode extends IntermediateCode {
 
     @Override
     public Operand getLeftVal() {
-        return null;
+        if (op == Operator.LOAD) {
+            return target;
+        } else {
+            return null;
+        }
     }
 
     @Override
     public Pair<Operand, Operand> getRightVal() {
-        return new Pair<Operand, Operand>(target, source2);
+        if (op == Operator.LOAD) {
+            return new Pair<Operand, Operand>(source2, null);
+        } else {
+            return new Pair<Operand, Operand>(target, source2);
+        }
     }
 
     @Override
@@ -44,7 +52,7 @@ public class MemoryCode extends IntermediateCode {
                        RegisterPool registerPool) {
         String targetReg;
         if (op == Operator.LOAD) {
-            targetReg = registerPool.allocateRegToVarNotLoad(target, varAddressOffset, mipsVisitor);
+            targetReg = registerPool.allocateRegToVarNotLoad(target, varAddressOffset, mipsVisitor, this);
         } else {
             targetReg = getSrcReg(target, varAddressOffset, mipsVisitor, registerPool);
         }
@@ -63,7 +71,7 @@ public class MemoryCode extends IntermediateCode {
 //                    mipsVisitor);
 //        }
 
-        if (mipsVisitor.varIsGlobal(source1.getName())) {
+        if (source1.isGlobal()) {
             //操作的内存名称为全局变量
             if (op == Operator.LOAD) {
                 mipsVisitor.addMipsCode(MipsCode.generateLW(targetReg, source1.getName(), source2Reg));
@@ -73,7 +81,7 @@ public class MemoryCode extends IntermediateCode {
             return;
         } else {
             //局部变量
-            String tempReg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor);
+            String tempReg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor, this);
             if (varAddressOffset.isParam(source1)) {
                 //参数
                 mipsVisitor.addMipsCode(MipsCode.generateLW(tempReg,

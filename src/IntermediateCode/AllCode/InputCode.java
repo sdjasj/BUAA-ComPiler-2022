@@ -30,15 +30,15 @@ public class InputCode extends IntermediateCode {
         mipsVisitor.addMipsCode(MipsCode.generateComment("scanf " + target));
 
 
-        registerPool.clearSpecialReg("$v0", varAddressOffset, mipsVisitor);
+        registerPool.clearSpecialReg(target,"$v0", varAddressOffset, mipsVisitor, this);
         MipsCode mipsCode = MipsCode.generateLi("$v0", "5");
         mipsVisitor.addMipsCode(mipsCode);
         mipsVisitor.addMipsCode(MipsCode.generateSYSCALL());
-        if (mipsVisitor.varIsGlobal(target.getName())) {
+        if (target.isGlobal()) {
             mipsVisitor.addMipsCode(MipsCode.generateSW("$v0", target.getName(), "$0"));
         } else {
             String res =
-                registerPool.allocateRegToVarNotLoad(target, varAddressOffset, mipsVisitor);
+                registerPool.allocateRegToVarNotLoad(target, varAddressOffset, mipsVisitor, this);
             mipsVisitor.addMipsCode(MipsCode.generateMOVE(res, "$v0"));
         }
     }

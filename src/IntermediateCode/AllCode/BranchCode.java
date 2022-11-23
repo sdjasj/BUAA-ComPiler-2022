@@ -17,7 +17,10 @@ public class BranchCode extends IntermediateCode {
         super(target, source1, source2, op);
     }
 
-
+    @Override
+    public Operand getLeftVal() {
+        return target;
+    }
 
     @Override
     public void output() {

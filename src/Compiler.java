@@ -16,6 +16,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 
 public class Compiler {
+
     public static void main(String[] args) throws IOException, ClassNotFoundException {
         File filePath = new File("testfile.txt");
         byte[] bytes = Files.readAllBytes(Paths.get(filePath.getAbsolutePath()));
@@ -52,6 +53,7 @@ public class Compiler {
 //        intermediateVisitor.testPrint();
         MipsVisitor mipsVisitor = new MipsVisitor();
         intermediateVisitor.IntermediateToMips(mipsVisitor);
+        //TODO:写回临时寄存器的时机
         mipsVisitor.output();
         ps.close();
     }

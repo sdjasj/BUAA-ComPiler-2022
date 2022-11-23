@@ -8,6 +8,7 @@ import IntermediateCode.Operator;
 import IntermediateCode.TCode;
 import Lexer.TokenType;
 import MySymbolTable.SymbolTable;
+import Tool.Optimizer;
 
 ////RelExp → AddExp | RelExp ('<' | '>' | '<=' | '>=') AddExp
 public class RelExpNode extends ParserNode {
@@ -75,6 +76,37 @@ public class RelExpNode extends ParserNode {
         if (relExpNode != null) {
             Operand src1 = relExpNode.getRelExpResult(intermediateVisitor);
             Operand src2 = addExpNode.generateMidCodeAndReturnTempVar(intermediateVisitor);
+
+            if (Optimizer.ConstOptimizer && src1.isNUMBER() && src2.isNUMBER()) {
+                int src1Val = Integer.parseInt(src1.getName());
+                int src2Val = Integer.parseInt(src2.getName());
+                if (op == TokenType.LSS) {
+                    if (src1Val < src2Val) {
+                        return Operand.getNewOperand("1", Operand.OperandType.NUMBER);
+                    } else {
+                        return Operand.getNewOperand("0", Operand.OperandType.NUMBER);
+                    }
+                } else if (op == TokenType.LEQ) {
+                    if (src1Val <= src2Val) {
+                        return Operand.getNewOperand("1", Operand.OperandType.NUMBER);
+                    } else {
+                        return Operand.getNewOperand("0", Operand.OperandType.NUMBER);
+                    }
+                } else if (op == TokenType.GRE) {
+                    if (src1Val > src2Val) {
+                        return Operand.getNewOperand("1", Operand.OperandType.NUMBER);
+                    } else {
+                        return Operand.getNewOperand("0", Operand.OperandType.NUMBER);
+                    }
+                } else if (op == TokenType.GEQ) {
+                    if (src1Val >= src2Val) {
+                        return Operand.getNewOperand("1", Operand.OperandType.NUMBER);
+                    } else {
+                        return Operand.getNewOperand("0", Operand.OperandType.NUMBER);
+                    }
+                }
+            }
+
             Operand target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
             Operator ICop = null;
             if (op == TokenType.LSS) {

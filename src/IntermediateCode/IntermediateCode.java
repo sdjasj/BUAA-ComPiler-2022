@@ -19,6 +19,7 @@ public class IntermediateCode {
     protected Operator op;
     protected boolean isBasicBlockBegin;
     public static int cnt = 0;
+    protected BasicBlock basicBlock;
     protected int id = cnt++;
     protected ConflictGraph conflictGraph;
 
@@ -27,6 +28,10 @@ public class IntermediateCode {
         this.source1 = source1;
         this.source2 = source2;
         this.op = op;
+    }
+
+    public void setBasicBlock(BasicBlock basicBlock) {
+        this.basicBlock = basicBlock;
     }
 
     public Operand getTarget() {
@@ -47,6 +52,10 @@ public class IntermediateCode {
 
     public void output() {
 
+    }
+
+    public BasicBlock getBasicBlock() {
+        return basicBlock;
     }
 
     public void setBasicBlockBegin(boolean basicBlockBegin) {
@@ -72,16 +81,16 @@ public class IntermediateCode {
         if (src.isNUMBER()) {
             //数字
             reg =
-                registerPool.getTempReg(true, varAddressOffset, mipsVisitor);
+                registerPool.getTempReg(true, varAddressOffset, mipsVisitor, this);
             MipsCode mipsCode = MipsCode.generateLi(reg, src.getName());
             mipsVisitor.addMipsCode(mipsCode);
-        } else if (mipsVisitor.varIsGlobal(src.getName())) {
+        } else if (src.isGlobal()) {
             //全局变量
             if (src.isVar()) {
-                reg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor);
+                reg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor, this);
                 mipsVisitor.addMipsCode(MipsCode.generateLW(reg, src.getName(), "$0"));
             } else if (src.isAddress()) {
-                reg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor);
+                reg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor, this);
                 mipsVisitor.addMipsCode(MipsCode.generateLA(src.getName(), reg));
             } else {
                 System.err.println("error in CalculateCode of source1 global");
@@ -90,10 +99,10 @@ public class IntermediateCode {
             //参数
             if (src.isVar()) {
                 reg = registerPool.allocateRegToVarLoad(src, varAddressOffset,
-                    mipsVisitor);
+                    mipsVisitor, this);
             } else if (src.isAddress()) {
                 reg =
-                    registerPool.allocateRegToVarLoad(src, varAddressOffset, mipsVisitor);
+                    registerPool.allocateRegToVarLoad(src, varAddressOffset, mipsVisitor, this);
             } else {
                 System.err.println("error in CalculateCode of source1 params");
             }
@@ -101,7 +110,7 @@ public class IntermediateCode {
             //局部变量
             if (src.isVar()) {
                 reg = registerPool.allocateRegToVarLoad(src, varAddressOffset,
-                    mipsVisitor);
+                    mipsVisitor, this);
             } else if (src.isAddress()) {
 //                if (src.getName().startsWith("t@")) {
 //                    System.err.println(151515151);
@@ -109,7 +118,7 @@ public class IntermediateCode {
 //                        mipsVisitor);
 //                } else {
                 int arrayOffset = varAddressOffset.getVarOffset(src);
-                reg = registerPool.getTempReg(true, varAddressOffset, mipsVisitor);
+                reg = registerPool.getTempReg(true, varAddressOffset, mipsVisitor, this);
                 mipsVisitor.addMipsCode(
                     MipsCode.generateADDIU(reg, "$sp", String.valueOf(arrayOffset)));
             } else {
@@ -137,6 +146,10 @@ public class IntermediateCode {
         }
         return usedSet;
     }
+
+//    public HashSet<Operand> getDefinedVal() {
+//
+//    }
 
     public void setConflictGraph(ConflictGraph conflictGraph) {
         this.conflictGraph = conflictGraph;

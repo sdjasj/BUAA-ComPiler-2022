@@ -24,20 +24,22 @@ public class OutputCode extends IntermediateCode {
     public void toMips(MipsVisitor mipsVisitor, VarAddressOffset varAddressOffset,
                        RegisterPool registerPool) {
         if (isInt) {
-            registerPool.clearSpecialReg("$a0", varAddressOffset, mipsVisitor);
+            registerPool.clearSpecialReg(source1,"$a0", varAddressOffset, mipsVisitor, this);
             if (source1.isNUMBER()) {
                 mipsVisitor.addMipsCode(MipsCode.generateLi("$a0", source1.getName()));
-            } else if (mipsVisitor.varIsGlobal(source1.getName())) {
+            } else if (source1.isGlobal()) {
                 mipsVisitor.addMipsCode(MipsCode.generateLW("$a0", source1.getName(), "$0"));
             } else {
                 String targetReg = getSrcReg(source1, varAddressOffset, mipsVisitor, registerPool);
+//                System.err.println(source1);
+//                System.err.println(targetReg);
                 mipsVisitor.addMipsCode(MipsCode.generateMOVE("$a0", targetReg));
             }
             //v0 is need to store?
             mipsVisitor.addMipsCode(MipsCode.generateLi("$v0", "1"));
             mipsVisitor.addMipsCode(MipsCode.generateSYSCALL());
         } else {
-            registerPool.clearSpecialReg("$a0", varAddressOffset, mipsVisitor);
+            registerPool.clearSpecialReg(source1,"$a0", varAddressOffset, mipsVisitor, this);
             mipsVisitor.addMipsCode(MipsCode.generateLA(source1.getName(), "$a0"));
             //v0 is need to store?
             mipsVisitor.addMipsCode(MipsCode.generateLi("$v0", "4"));

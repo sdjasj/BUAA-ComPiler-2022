@@ -27,11 +27,16 @@ public class GlobalArrayDecl extends GlobalDecl {
         for (Integer dimension : dimensions) {
             dimensionShow.append("[").append(dimension).append("]");
         }
-
-        String intermediateCode =
-            constDef + " " + storeType + " " + name + " " + dimensionShow.toString() + " = " +
-                initVal;
-        System.out.println(intermediateCode);
+        if (initVal == null) {
+            String intermediateCode =
+                constDef + " " + storeType + " " + name + " " + dimensionShow.toString() + " = " + "0:" + dimensions;
+            System.out.println(intermediateCode);
+        } else {
+            String intermediateCode =
+                constDef + " " + storeType + " " + name + " " + dimensionShow.toString() + " = " +
+                    initVal;
+            System.out.println(intermediateCode);
+        }
     }
 
     public GlobalArrayInit toMips() {

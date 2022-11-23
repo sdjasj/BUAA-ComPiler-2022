@@ -63,18 +63,9 @@ public class VarDefNode extends ParserNode {
                     storeType = GlobalDecl.StoreType.int_;
                 }
                 String name = TCode.reName(ident.getValue(), blockDepth);
-                ArrayList<Integer> initval;
+                ArrayList<Integer> initval = null;
                 if (hasInitval()) {
                     initval = initValNode.getConstArrayVal(RecordSymbolTable);
-                } else {
-                    initval = new ArrayList<>();
-                    int t = 1;
-                    for (Integer integer : dimensionLength) {
-                        t *= integer;
-                    }
-                    for (int i = 0; i < t; i++) {
-                        initval.add(0);
-                    }
                 }
                 GlobalArrayDecl globalArrayDecl =
                     new GlobalArrayDecl(storeType, name, false, dimensionLength, initval);

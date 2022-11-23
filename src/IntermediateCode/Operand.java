@@ -1,5 +1,9 @@
 package IntermediateCode;
 
+import MipsCode.MipsCode.MipsCode;
+import MipsCode.MipsVisitor;
+import MipsCode.VarAddressOffset;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Objects;
@@ -14,7 +18,7 @@ public class Operand {
     private OperandType operandType;
     private String reg;
     private boolean allocatedReg;
-    private boolean isParamLoaded = false;
+    private boolean global = false;
 
     private static HashSet<Operand> oldName = new HashSet<>();
 
@@ -58,8 +62,12 @@ public class Operand {
         return operandType == OperandType.ADDRESS;
     }
 
+    public void setGlobal(boolean global) {
+        this.global = global;
+    }
+
     public boolean isGlobal() {
-        return name.endsWith("_0");
+        return name.endsWith("_0") || global;
     }
 
     public boolean isTemp() {
@@ -86,12 +94,24 @@ public class Operand {
         return allocatedReg;
     }
 
-    public void setParamLoaded(boolean paramLoaded) {
-        isParamLoaded = paramLoaded;
+    public void storeToMemory(MipsVisitor mipsVisitor, VarAddressOffset varAddressOffset, String reg) {
+        if (isGlobal()) {
+            mipsVisitor.addMipsCode(MipsCode.generateSW(reg, name, "$0"));
+        } else if (isLocal() || isTemp()) {
+            mipsVisitor.addMipsCode(
+                MipsCode.generateSW(reg, String.valueOf(varAddressOffset.getVarOffset(this)),
+                    "$sp"));
+        }
     }
 
-    public boolean isParamLoaded() {
-        return isParamLoaded;
+    public void loadToReg(MipsVisitor mipsVisitor, VarAddressOffset varAddressOffset, String reg) {
+        if (isGlobal()) {
+            mipsVisitor.addMipsCode(MipsCode.generateLW(reg, name, "$0"));
+        } else {
+            mipsVisitor.addMipsCode(
+                MipsCode.generateLW(reg, String.valueOf(varAddressOffset.getVarOffset(this)),
+                    "$sp"));
+        }
     }
 
     @Override

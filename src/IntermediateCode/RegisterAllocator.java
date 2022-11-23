@@ -20,6 +20,9 @@ public class RegisterAllocator {
             add("$s6");
             add("$s7");
             add("$fp");
+            add("$gp");
+            add("$k0");
+            add("$k1");
         }
     };
 
@@ -40,6 +43,7 @@ public class RegisterAllocator {
             Operand node = nodes.get(0);
             if (edges.get(node).size() >= globalRegs.size()) {
 //                System.err.println(edges.get(node).size());
+                node = nodes.get(nodes.size() - 1);
                 stack.add(node);
             } else {
 //                System.err.println(edges.get(node).size());
@@ -47,7 +51,8 @@ public class RegisterAllocator {
                 node.setAllocatedReg(true);
                 stack.add(node);
             }
-            edges.forEach((k, v) -> edges.get(k).remove(node));
+            Operand finalNode = node;
+            edges.forEach((k, v) -> edges.get(k).remove(finalNode));
             edges.remove(node);
             nodes.remove(node);
         }

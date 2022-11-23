@@ -10,6 +10,7 @@ import MipsCode.VarAddressOffset;
 import Tool.Pair;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 public class FunctionCallCode extends IntermediateCode {
@@ -31,8 +32,10 @@ public class FunctionCallCode extends IntermediateCode {
     @Override
     public void toMips(MipsVisitor mipsVisitor, VarAddressOffset varAddressOffset,
                        RegisterPool registerPool) {
-        //TODO 临时寄存器现在无脑存,只需要存以后会用的
-        ArrayList<String> regs = registerPool.getUsedTempRegs();
+        HashSet<Operand> usedTempVars = new HashSet<>();
+        basicBlock.addUsedTempVarForFunctionCall(usedTempVars, this);
+        HashSet<String> regs = new HashSet<>(registerPool.getUsedTempRegs(usedTempVars));
+
         for (String reg : regs) {
 //            System.err.println(reg);
 //            System.err.println(registerPool.getVarNameOfTempReg(reg));
@@ -42,14 +45,6 @@ public class FunctionCallCode extends IntermediateCode {
             mipsVisitor.addMipsCode(storeUsedGlobalRegs);
         }
         mipsVisitor.addMipsCode(MipsCode.generateJAL(target.getName()));
-        for (String reg : regs) {
-//            System.err.println(reg);
-//            System.err.println(registerPool.getVarNameOfTempReg(reg));
-            MipsCode storeUsedGlobalRegs = MipsCode.generateLW(reg,
-                String.valueOf(
-                    varAddressOffset.getVarOffset(registerPool.getVarNameOfTempReg(reg))), "$sp");
-            mipsVisitor.addMipsCode(storeUsedGlobalRegs);
-        }
         registerPool.clearAllTempRegs();
     }
 

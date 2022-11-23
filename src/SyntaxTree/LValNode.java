@@ -11,6 +11,7 @@ import Lexer.Token;
 import MySymbolTable.SymbolTable;
 import MySymbolTable.SymbolTableItem;
 import MySymbolTable.SymbolType;
+import Tool.Optimizer;
 import Tool.Pair;
 
 import java.io.IOException;
@@ -142,54 +143,76 @@ public class LValNode extends ParserNode {
             if (item.getDimension() > dimension) {
                 Operand src2 =
                     dimensionOfExp.get(0).generateMidCodeAndReturnTempVar(intermediateVisitor);
+                if (src2.isNUMBER() && Optimizer.ConstOptimizer) {
+                    src2 = Operand.getNewOperand(String.valueOf(Integer.parseInt(src2.getName()) * item.getDimensionLength(1) * 4),
+                        Operand.OperandType.NUMBER);
+                } else {
+                    Operand temp = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
 
-                Operand temp = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
-
-                intermediateVisitor.addIntermediateCode(new CalculateCode(temp, src2,
-                    Operand.getNewOperand(String.valueOf(item.getDimensionLength(1) * 4),
-                        Operand.OperandType.NUMBER), Operator.MUL));
-                //bug
-                src2 = temp;
+                    intermediateVisitor.addIntermediateCode(new CalculateCode(temp, src2,
+                        Operand.getNewOperand(String.valueOf(item.getDimensionLength(1) * 4),
+                            Operand.OperandType.NUMBER), Operator.MUL));
+                    src2 = temp;
+                }
                 Operand target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.ADDRESS);
                 Operand src1 =
                     Operand.getNewOperand(TCode.reName(name, item.getBlockDepth()), Operand.OperandType.ADDRESS);
+                if (item.isConst()) {
+                    src1.setGlobal(true);
+                }
                 CalculateCode calculateCode = new CalculateCode(target, src1, src2, Operator.ADD);
                 intermediateVisitor.addIntermediateCode(calculateCode);
-
-
 
                 return target;
             } else {
                 //变量数组
                 Operand src2 =
                     dimensionOfExp.get(0).generateMidCodeAndReturnTempVar(intermediateVisitor);
-                Operand temp = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
-                intermediateVisitor.addIntermediateCode(
-                    new CalculateCode(temp, src2, Operand.getNewOperand("4",
-                        Operand.OperandType.NUMBER), Operator.MUL));
-                src2 = temp;
+                if (src2.isNUMBER() && Optimizer.ConstOptimizer) {
+                    src2 = Operand.getNewOperand(String.valueOf(Integer.parseInt(src2.getName()) * 4),
+                        Operand.OperandType.NUMBER);
+                } else {
+                    Operand temp = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
+                    intermediateVisitor.addIntermediateCode(
+                        new CalculateCode(temp, src2, Operand.getNewOperand("4",
+                            Operand.OperandType.NUMBER), Operator.MUL));
+                    src2 = temp;
+                }
 
                 Operand target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
                 Operand src1 =
                     Operand.getNewOperand(TCode.reName(name, item.getBlockDepth()), Operand.OperandType.ADDRESS);
+                if (item.isConst()) {
+                    src1.setGlobal(true);
+                }
                 MemoryCode memoryCode = new MemoryCode(target, src1, src2, Operator.LOAD);
                 intermediateVisitor.addIntermediateCode(memoryCode);
+
                 return target;
             }
         }
 
         //array name
         String arrayName = TCode.reName(ident.getValue(), item.getBlockDepth());
-        Operand target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
         Operand src1 = dimensionOfExp.get(0).generateMidCodeAndReturnTempVar(intermediateVisitor);
+        Operand target = null;
+        CalculateCode calculateCode = null;
         int dimensionLength = item.getDimensionLength(1);
-        CalculateCode calculateCode =
-            new CalculateCode(target, src1,
-                Operand.getNewOperand(String.valueOf(dimensionLength), Operand.OperandType.NUMBER),
-                Operator.MUL
-            );
-        intermediateVisitor.addIntermediateCode(calculateCode);
-        src1 = target;
+        if (src1.isNUMBER() && Optimizer.ConstOptimizer) {
+            target = Operand.getNewOperand(String.valueOf(Integer.parseInt(src1.getName()) * dimensionLength),
+                Operand.OperandType.NUMBER);
+            src1 = target;
+        } else {
+            target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
+            calculateCode =
+                new CalculateCode(target, src1,
+                    Operand.getNewOperand(String.valueOf(dimensionLength), Operand.OperandType.NUMBER),
+                    Operator.MUL
+                );
+            intermediateVisitor.addIntermediateCode(calculateCode);
+            src1 = target;
+        }
+
         for (int i = 1; i < dimensionOfExp.size(); i++) {
             Operand src2 =
                 dimensionOfExp.get(i).generateMidCodeAndReturnTempVar(intermediateVisitor);
@@ -197,53 +220,99 @@ public class LValNode extends ParserNode {
 
             if (dimensionLength == 0) {
                 if (item.getDimension() > dimension) {
-                    target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
-                    calculateCode = new CalculateCode(target, src1, src2, Operator.ADD);
-                    intermediateVisitor.addIntermediateCode(calculateCode);
+                    if (src1.isNUMBER() && src2.isNUMBER() && Optimizer.ConstOptimizer) {
+                        target = Operand.getNewOperand(String.valueOf(
+                                Integer.parseInt(src1.getName()) + Integer.parseInt(src2.getName())),
+                            Operand.OperandType.NUMBER);
+                    } else {
+                        target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
+                        calculateCode = new CalculateCode(target, src1, src2, Operator.ADD);
+                        intermediateVisitor.addIntermediateCode(calculateCode);
+                    }
 
 
-                    Operand temp = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
-                    intermediateVisitor.addIntermediateCode(
-                        new CalculateCode(temp, target, Operand.getNewOperand("4",
-                            Operand.OperandType.NUMBER), Operator.MUL));
+                    Operand temp = null;
+                    if (target.isNUMBER() && Optimizer.ConstOptimizer) {
+                        temp = Operand.getNewOperand(String.valueOf(Integer.parseInt(
+                            target.getName()) * 4), Operand.OperandType.NUMBER);
+                    } else {
+                        temp = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
+                        intermediateVisitor.addIntermediateCode(
+                            new CalculateCode(temp, target, Operand.getNewOperand("4",
+                                Operand.OperandType.NUMBER), Operator.MUL));
+                    }
 
 
 
                     target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.ADDRESS);
+                    Operand addr = Operand.getNewOperand(arrayName, Operand.OperandType.ADDRESS);
+                    if (item.isConst()) {
+                        addr.setGlobal(true);
+                    }
                     CalculateCode calculateCode1 =
-                        new CalculateCode(target, Operand.getNewOperand(arrayName, Operand.OperandType.ADDRESS),
-                            temp, Operator.ADD);
+                        new CalculateCode(target, addr, temp, Operator.ADD);
                     intermediateVisitor.addIntermediateCode(calculateCode1);
+
                     return target;
+                } else {
+                    if (src1.isNUMBER() && src2.isNUMBER() && Optimizer.ConstOptimizer) {
+                        target = Operand.getNewOperand(String.valueOf(
+                                Integer.parseInt(src1.getName()) + Integer.parseInt(src2.getName())),
+                            Operand.OperandType.NUMBER);
+                    } else {
+                        target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
+                        calculateCode = new CalculateCode(target, src1, src2, Operator.ADD);
+                        intermediateVisitor.addIntermediateCode(calculateCode);
+                    }
+                    Operand temp = null;
+                    if (target.isNUMBER() && Optimizer.ConstOptimizer) {
+                        temp = Operand.getNewOperand(String.valueOf(Integer.parseInt(
+                            target.getName()) * 4), Operand.OperandType.NUMBER);
+                    } else {
+                        temp = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
+                        intermediateVisitor.addIntermediateCode(
+                            new CalculateCode(temp, target, Operand.getNewOperand("4",
+                                Operand.OperandType.NUMBER), Operator.MUL));
+                    }
+
+
+                    target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
+                    Operand addr = Operand.getNewOperand(arrayName, Operand.OperandType.ADDRESS);
+                    if (item.isConst()) {
+                        addr.setGlobal(true);
+                    }
+                    MemoryCode memoryCode =
+                        new MemoryCode(target, addr, temp, Operator.LOAD);
+                    intermediateVisitor.addIntermediateCode(memoryCode);
+
+                    return target;
+                }
+            } else {
+                if (src2.isNUMBER() && Optimizer.ConstOptimizer) {
+                    target = Operand.getNewOperand(String.valueOf(Integer.parseInt(src2.getName()) * dimensionLength),
+                        Operand.OperandType.NUMBER);
+                    src2 = target;
+                } else {
+                    target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
+                    calculateCode =
+                        new CalculateCode(target, src2,
+                            Operand.getNewOperand(String.valueOf(dimensionLength), Operand.OperandType.NUMBER),
+                            Operator.MUL);
+                    intermediateVisitor.addIntermediateCode(calculateCode);
+                    src2 = target;
+                }
+
+                if (src1.isNUMBER() && src2.isNUMBER() && Optimizer.ConstOptimizer) {
+                    target = Operand.getNewOperand(String.valueOf(
+                            Integer.parseInt(src1.getName()) + Integer.parseInt(src2.getName())),
+                        Operand.OperandType.NUMBER);
+                    src1 = target;
                 } else {
                     target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
                     calculateCode = new CalculateCode(target, src1, src2, Operator.ADD);
                     intermediateVisitor.addIntermediateCode(calculateCode);
-
-                    Operand temp = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
-                    intermediateVisitor.addIntermediateCode(
-                        new CalculateCode(temp, target, Operand.getNewOperand("4",
-                            Operand.OperandType.NUMBER), Operator.MUL));
-
-                    target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
-                    MemoryCode memoryCode =
-                        new MemoryCode(target, Operand.getNewOperand(arrayName, Operand.OperandType.ADDRESS),
-                            temp, Operator.LOAD);
-                    intermediateVisitor.addIntermediateCode(memoryCode);
-                    return target;
+                    src1 = target;
                 }
-            } else {
-                target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
-                calculateCode =
-                    new CalculateCode(target, src2,
-                        Operand.getNewOperand(String.valueOf(dimensionLength), Operand.OperandType.NUMBER),
-                        Operator.MUL);
-                intermediateVisitor.addIntermediateCode(calculateCode);
-                src2 = target;
-                target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
-                calculateCode = new CalculateCode(target, src1, src2, Operator.ADD);
-                intermediateVisitor.addIntermediateCode(calculateCode);
-                src1 = target;
             }
         }
         return null;
@@ -276,58 +345,102 @@ public class LValNode extends ParserNode {
             //得到数组偏移
             Operand src2 =
                 dimensionOfExp.get(0).generateMidCodeAndReturnTempVar(intermediateVisitor);
-            Operand temp = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
-            intermediateVisitor.addIntermediateCode(
-                new CalculateCode(temp, src2, Operand.getNewOperand("4",
-                    Operand.OperandType.NUMBER), Operator.MUL));
-            src2 = temp;
+            if (src2.isNUMBER() && Optimizer.ConstOptimizer) {
+                src2 = Operand.getNewOperand(String.valueOf(Integer.parseInt(src2.getName()) * 4),
+                    Operand.OperandType.NUMBER);
+            } else {
+                Operand temp = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
+                intermediateVisitor.addIntermediateCode(
+                    new CalculateCode(temp, src2, Operand.getNewOperand("4",
+                        Operand.OperandType.NUMBER), Operator.MUL));
+                src2 = temp;
+            }
 
-            Operand src1 =
-                Operand.getNewOperand(TCode.reName(name, item.getBlockDepth()), Operand.OperandType.ADDRESS);
+            Operand src1 = Operand.getNewOperand(TCode.reName(name, item.getBlockDepth()),
+                Operand.OperandType.ADDRESS);
+
+            if (item.isConst()) {
+                src1.setGlobal(true);
+            }
+
             return new Pair<>(src1, src2);
         }
-        Operand target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
         Operand src1 = dimensionOfExp.get(0).generateMidCodeAndReturnTempVar(intermediateVisitor);
+        Operand target = null;
+        CalculateCode calculateCode = null;
         int dimensionLength = item.getDimensionLength(1);
-        CalculateCode calculateCode =
-            new CalculateCode(target, src1,
-                Operand.getNewOperand(String.valueOf(dimensionLength), Operand.OperandType.NUMBER),
-                Operator.MUL
-            );
-        intermediateVisitor.addIntermediateCode(calculateCode);
-        src1 = target;
+        if (src1.isNUMBER() && Optimizer.ConstOptimizer) {
+            target = Operand.getNewOperand(String.valueOf(Integer.parseInt(src1.getName()) * dimensionLength),
+                Operand.OperandType.NUMBER);
+            src1 = target;
+        } else {
+            target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
+            calculateCode =
+                new CalculateCode(target, src1,
+                    Operand.getNewOperand(String.valueOf(dimensionLength), Operand.OperandType.NUMBER),
+                    Operator.MUL
+                );
+            intermediateVisitor.addIntermediateCode(calculateCode);
+            src1 = target;
+        }
+
         for (int i = 1; i < dimensionOfExp.size(); i++) {
             Operand src2 =
                 dimensionOfExp.get(i).generateMidCodeAndReturnTempVar(intermediateVisitor);
             dimensionLength = item.getDimensionLength(i + 1);
             if (dimensionLength == 0) {
+                if (src1.isNUMBER() && src2.isNUMBER() && Optimizer.ConstOptimizer) {
+                    target = Operand.getNewOperand(String.valueOf(
+                            Integer.parseInt(src1.getName()) + Integer.parseInt(src2.getName())),
+                        Operand.OperandType.NUMBER);
+                } else {
+                    target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
+                    calculateCode = new CalculateCode(target, src1, src2, Operator.ADD);
+                    intermediateVisitor.addIntermediateCode(calculateCode);
+                }
 
-
-                target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
-                calculateCode = new CalculateCode(target, src1, src2, Operator.ADD);
-                intermediateVisitor.addIntermediateCode(calculateCode);
-
-                intermediateVisitor.addIntermediateCode(
-                    new CalculateCode(target, target, Operand.getNewOperand("4",
-                        Operand.OperandType.NUMBER), Operator.MUL));
-
-                return new Pair<>(
-                    Operand.getNewOperand(TCode.reName(name, item.getBlockDepth()),
-                        Operand.OperandType.ADDRESS),
-                    target);
+                if (target.isNUMBER() && Optimizer.ConstOptimizer) {
+                    target = Operand.getNewOperand(
+                        String.valueOf(Integer.parseInt(target.getName()) * 4),
+                        Operand.OperandType.NUMBER);
+                } else {
+                    intermediateVisitor.addIntermediateCode(
+                        new CalculateCode(target, target, Operand.getNewOperand("4",
+                            Operand.OperandType.NUMBER), Operator.MUL));
+                }
+                Operand addr = Operand.getNewOperand(TCode.reName(name, item.getBlockDepth()),
+                    Operand.OperandType.ADDRESS);
+                if (item.isConst()) {
+                    addr.setGlobal(true);
+                }
+                return new Pair<>(addr, target);
 
             } else {
-                target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
-                calculateCode =
-                    new CalculateCode(target, src2,
-                        Operand.getNewOperand(String.valueOf(dimensionLength), Operand.OperandType.NUMBER),
-                        Operator.MUL);
-                intermediateVisitor.addIntermediateCode(calculateCode);
-                src2 = target;
-                target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
-                calculateCode = new CalculateCode(target, src1, src2, Operator.ADD);
-                intermediateVisitor.addIntermediateCode(calculateCode);
-                src1 = target;
+                if (src2.isNUMBER() && Optimizer.ConstOptimizer) {
+                    target = Operand.getNewOperand(String.valueOf(Integer.parseInt(src2.getName()) * dimensionLength),
+                        Operand.OperandType.NUMBER);
+                    src2 = target;
+                } else {
+                    target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
+                    calculateCode =
+                        new CalculateCode(target, src2,
+                            Operand.getNewOperand(String.valueOf(dimensionLength), Operand.OperandType.NUMBER),
+                            Operator.MUL);
+                    intermediateVisitor.addIntermediateCode(calculateCode);
+                    src2 = target;
+                }
+
+                if (src1.isNUMBER() && src2.isNUMBER() && Optimizer.ConstOptimizer) {
+                    target = Operand.getNewOperand(String.valueOf(
+                            Integer.parseInt(src1.getName()) + Integer.parseInt(src2.getName())),
+                        Operand.OperandType.NUMBER);
+                    src1 = target;
+                } else {
+                    target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
+                    calculateCode = new CalculateCode(target, src1, src2, Operator.ADD);
+                    intermediateVisitor.addIntermediateCode(calculateCode);
+                    src1 = target;
+                }
             }
         }
         return null;

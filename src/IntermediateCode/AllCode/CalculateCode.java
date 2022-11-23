@@ -19,11 +19,6 @@ public class CalculateCode extends IntermediateCode {
     }
 
     @Override
-    public Operand getLeftVal() {
-        return null;
-    }
-
-    @Override
     public void toMips(MipsVisitor mipsVisitor, VarAddressOffset varAddressOffset,
                        RegisterPool registerPool) {
         //comment
@@ -70,7 +65,7 @@ public class CalculateCode extends IntermediateCode {
 
 
         String resReg =
-            registerPool.allocateRegToVarNotLoad(target, varAddressOffset, mipsVisitor);
+            registerPool.allocateRegToVarNotLoad(target, varAddressOffset, mipsVisitor, this);
         if (op == Operator.ADD) {
             MipsCode mipsCode = MipsCode.generateADDU(resReg, source1Reg, source2Reg);
             mipsVisitor.addMipsCode(mipsCode);
@@ -92,7 +87,7 @@ public class CalculateCode extends IntermediateCode {
 
 
         //左值为全局变量
-        if (mipsVisitor.varIsGlobal(target.getName())) {
+        if (target.isGlobal()) {
             MipsCode mipsCode1 = MipsCode.generateSW(resReg, target.getName(), "$0");
             mipsVisitor.addMipsCode(mipsCode1);
         }

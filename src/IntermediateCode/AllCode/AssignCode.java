@@ -21,13 +21,13 @@ public class AssignCode extends IntermediateCode {
         mipsVisitor.addMipsCode(MipsCode.generateComment("assign " + target + " by " + source1));
 
         String src1Reg = getSrcReg(source1, varAddressOffset, mipsVisitor, registerPool);
-        if (mipsVisitor.varIsGlobal(target.getName())) {
+        if (target.isGlobal()) {
             MipsCode storeCode = MipsCode.generateSW(src1Reg, target.getName(), "$0");
             mipsVisitor.addMipsCode(storeCode);
         } else {
             String targetReg =
                 registerPool.allocateRegToVarNotLoad(target, varAddressOffset,
-                    mipsVisitor);
+                    mipsVisitor, this);
             MipsCode moveCode =
                 MipsCode.generateMOVE(targetReg, src1Reg);
             mipsVisitor.addMipsCode(moveCode);

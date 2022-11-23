@@ -44,7 +44,7 @@ public class ConstAssignCode extends IntermediateCode {
     public void toMips(MipsVisitor mipsVisitor, VarAddressOffset varAddressOffset,
                        RegisterPool registerPool) {
         String tempReg =
-            registerPool.getTempReg(false, varAddressOffset, mipsVisitor);
+            registerPool.getTempReg(false, varAddressOffset, mipsVisitor, this);
         if (dimensions.size() == 0) {
             return;
         } else {

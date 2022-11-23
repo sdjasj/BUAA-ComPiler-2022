@@ -3,6 +3,7 @@ package IntermediateCode;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import IntermediateCode.AllCode.InputCode;
 import Tool.Pair;
 
 public class BasicBlock {
@@ -51,6 +52,7 @@ public class BasicBlock {
 
     public void addIntermediateCode(IntermediateCode intermediateCode) {
         intermediateCodes.add(intermediateCode);
+        intermediateCode.setBasicBlock(this);
     }
 
     public IntermediateCode getLastCode() {
@@ -131,6 +133,132 @@ public class BasicBlock {
             ans.add(basicBlock.id);
         }
         return ans;
+    }
+
+    public int findUsedVarNextCode(IntermediateCode curCode, Operand operand) {
+        int pos = intermediateCodes.indexOf(curCode);
+        for (int i = pos + 1; i < intermediateCodes.size(); i++) {
+            IntermediateCode intermediateCode = intermediateCodes.get(i);
+            Operand leftVal = intermediateCode.getLeftVal();
+            if (leftVal != null && (leftVal.isTemp() || leftVal.isLocal() || leftVal.isGlobal())) {
+                if (operand.equals(leftVal)) {
+                    return Integer.MAX_VALUE;
+                }
+            }
+            Pair<Operand, Operand> rightVals = intermediateCode.getRightVal();
+            if (rightVals != null) {
+                Operand operand1 = rightVals.getFirst();
+                if (operand1 != null && (operand1.isTemp() || operand1.isLocal() || operand1.isGlobal())) {
+                    if (operand.equals(operand1)) {
+                        return i - pos;
+                    }
+                }
+                Operand operand2 = rightVals.getSecond();
+                if (operand2 != null && (operand2.isTemp() || operand2.isLocal() || operand2.isGlobal())) {
+                    if (operand.equals(operand2)) {
+                        return i - pos;
+                    }
+                }
+            }
+        }
+        if (activeOutSet.contains(operand)) {
+            return intermediateCodes.size() - pos;
+        }
+        return Integer.MAX_VALUE;
+    }
+
+    public void addUsedTempVarForFunctionCall(HashSet<Operand> usedTempVars,
+                                              IntermediateCode callCode) {
+        int pos = intermediateCodes.indexOf(callCode);
+        for (int i = intermediateCodes.size() - 1; i > pos; i--) {
+            IntermediateCode intermediateCode = intermediateCodes.get(i);
+            Operand leftVal = intermediateCode.getLeftVal();
+            if (leftVal != null && (leftVal.isTemp() || leftVal.isLocal() || leftVal.isGlobal())) {
+                usedTempVars.remove(leftVal);
+            }
+            Pair<Operand, Operand> rightVals = intermediateCode.getRightVal();
+            if (rightVals != null) {
+                Operand operand1 = rightVals.getFirst();
+                if (operand1 != null && (operand1.isTemp() || operand1.isLocal() || operand1.isGlobal())) {
+                    usedTempVars.add(operand1);
+                }
+                Operand operand2 = rightVals.getSecond();
+                if (operand2 != null && (operand2.isTemp() || operand2.isLocal() || operand2.isGlobal())) {
+                    usedTempVars.add(operand2);
+                }
+            }
+        }
+    }
+
+    public boolean deadCodesDelete() {
+        HashSet<Integer> removeSet = new HashSet<>();
+        HashSet<Operand> activeSet = new HashSet<>(activeOutSet);
+        for (int i = intermediateCodes.size() - 1; i >= 0; i--) {
+            IntermediateCode intermediateCode = intermediateCodes.get(i);
+            Operand leftVal = intermediateCode.getLeftVal();
+            Pair<Operand, Operand> rightVal = intermediateCode.getRightVal();
+            if (leftVal != null && !leftVal.isGlobal() && leftVal.isVar() && !(intermediateCode instanceof InputCode) &&
+                !activeSet.contains(leftVal)) {
+                removeSet.add(i);
+//                HashSet<Operand> waitToDelete = new HashSet<>();
+//                if (rightVal != null) {
+//                    Operand first = rightVal.getFirst();
+//                    Operand second = rightVal.getSecond();
+//                    if (first != null && first.isTemp()) {
+//                        waitToDelete.add(first);
+//                    }
+//                    if (second != null && second.isTemp()) {
+//                        waitToDelete.add(second);
+//                    }
+//                }
+//                if (!waitToDelete.isEmpty()) {
+//                    for (int j = i - 1; j >= 0; j--) {
+//                        IntermediateCode intermediateCode1 = intermediateCodes.get(j);
+//                        Operand defineVar = intermediateCode1.target;
+//                        if (defineVar != null && waitToDelete.contains(defineVar)) {
+//                            removeSet.add(j);
+//                            waitToDelete.remove(defineVar);
+//                            Pair<Operand, Operand> usedVal = intermediateCode1.getRightVal();
+//                            if (usedVal != null) {
+//                                Operand first1 = usedVal.getFirst();
+//                                Operand second1 = usedVal.getSecond();
+//                                if (first1 != null && first1.isTemp()) {
+//                                    waitToDelete.add(first1);
+//                                }
+//                                if (second1 != null && second1.isTemp()) {
+//                                    waitToDelete.add(second1);
+//                                }
+//                            }
+//                        }
+//                    }
+//                    if (!waitToDelete.isEmpty()) {
+//                        System.err.println("error in dead code delete " + waitToDelete);
+//                    }
+//                }
+            } else {
+                if (leftVal != null && leftVal.isVar()) {
+                    activeSet.remove(leftVal);
+                }
+                if (rightVal != null) {
+                    Operand first = rightVal.getFirst();
+                    Operand second = rightVal.getSecond();
+                    if (first != null && first.isVar()) {
+                        activeSet.add(first);
+                    }
+                    if (second != null && second.isVar()) {
+                        activeSet.add(second);
+                    }
+                }
+            }
+        }
+        ArrayList<IntermediateCode> newCodes = new ArrayList<>();
+        for (int i = 0; i < intermediateCodes.size(); i++) {
+            if (!removeSet.contains(i)) {
+                newCodes.add(intermediateCodes.get(i));
+            }
+        }
+        this.intermediateCodes = newCodes;
+        return !removeSet.isEmpty();
     }
 
     public void testPrint() {

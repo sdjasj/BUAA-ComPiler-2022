@@ -15,9 +15,15 @@ public class GlobalArrayInit {
 
     public void output() {
         StringBuilder init = new StringBuilder(name + ":   .word  ");
-        for (Integer initVal : initVals) {
-            init.append(initVal).append(",");
+        if (initVals == null) {
+            init.append("0:" + size);
+            System.out.println(init);
+        } else {
+            for (Integer initVal : initVals) {
+                init.append(initVal).append(",");
+            }
+            System.out.println(init.substring(0, init.length() - 1));
         }
-        System.out.println(init.substring(0, init.length() - 1));
+
     }
 }

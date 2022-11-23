@@ -20,7 +20,7 @@ public class SingleCalculateCode extends IntermediateCode {
                        RegisterPool registerPool) {
         String targetReg =
             registerPool.allocateRegToVarNotLoad(target, varAddressOffset,
-                mipsVisitor);
+                mipsVisitor, this);
         String src1Reg = getSrcReg(source1, varAddressOffset, mipsVisitor, registerPool);
 //        if (source1.isNUMBER()) {
 //            src1Reg = registerPool.getTempReg(true, varAddressOffset, mipsVisitor);

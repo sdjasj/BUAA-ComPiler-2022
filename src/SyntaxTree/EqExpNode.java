@@ -8,6 +8,7 @@ import IntermediateCode.Operator;
 import IntermediateCode.TCode;
 import Lexer.TokenType;
 import MySymbolTable.SymbolTable;
+import Tool.Optimizer;
 
 //EqExp → RelExp | EqExp ('==' | '!=') RelExp
 public class EqExpNode extends ParserNode {
@@ -59,6 +60,25 @@ public class EqExpNode extends ParserNode {
         if (eqExpNode != null) {
             Operand src1 = eqExpNode.getEqExpResult(intermediateVisitor);
             Operand src2 = relExpNode.getRelExpResult(intermediateVisitor);
+
+            if (Optimizer.ConstOptimizer && src1.isNUMBER() && src2.isNUMBER()) {
+                int src1Val = Integer.parseInt(src1.getName());
+                int src2Val = Integer.parseInt(src2.getName());
+                if (op == TokenType.EQL) {
+                    if (src1Val == src2Val) {
+                        return Operand.getNewOperand("1", Operand.OperandType.NUMBER);
+                    } else {
+                        return Operand.getNewOperand("0", Operand.OperandType.NUMBER);
+                    }
+                } else if (op == TokenType.NEQ) {
+                    if (src1Val != src2Val) {
+                        return Operand.getNewOperand("1", Operand.OperandType.NUMBER);
+                    } else {
+                        return Operand.getNewOperand("0", Operand.OperandType.NUMBER);
+                    }
+                }
+            }
+
             Operand target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
             Operator ICOP = null;
             if (op == TokenType.EQL) {

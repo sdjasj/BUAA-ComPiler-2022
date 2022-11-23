@@ -1,5 +1,7 @@
 package MipsCode;
 
+import IntermediateCode.BasicBlock;
+import IntermediateCode.IntermediateCode;
 import IntermediateCode.Operand;
 import MipsCode.MipsCode.MipsCode;
 
@@ -15,8 +17,6 @@ public class RegisterPool {
     private HashSet<String> usedTempRegs;
     private ArrayList<String> tempRegs = new ArrayList<String>() {
         {
-            add("$v1");
-            add("$a0");
             add("$a1");
             add("$a2");
             add("$a3");
@@ -30,13 +30,15 @@ public class RegisterPool {
             add("$t7");
             add("$t8");
             add("$t9");
+            add("$v1");
+            add("$a0");
         }
     };
 
     public RegisterPool() {
         this.tempRegToVarMap = new HashMap<>();
         this.varToTempRegMap = new HashMap<>();
-        this.LRUTempRegs = new LinkedList<>(tempRegs);
+        this.LRUTempRegs = new LinkedList<>();
         this.usedTempRegs = new HashSet<>();
     }
 
@@ -45,6 +47,12 @@ public class RegisterPool {
     }
 
     public String getLongestNotUsedTempReg() {
+//        for (int i = LRUTempRegs.size() - 1; i >= 0; i--) {
+//            if (tempRegToVarMap.containsKey(LRUTempRegs.get(i)) &&
+//                tempRegToVarMap.get(LRUTempRegs.get(i)).isTemp()) {
+//                return LRUTempRegs.get(i);
+//            }
+//        }
         return LRUTempRegs.get(LRUTempRegs.size() - 1);
     }
 
@@ -54,23 +62,21 @@ public class RegisterPool {
     }
 
     public String allocateRegToVarLoad(Operand operand, VarAddressOffset varAddressOffset,
-                                       MipsVisitor mipsVisitor) {
+                                       MipsVisitor mipsVisitor, IntermediateCode intermediateCode) {
         String varName = operand.getName();
         if (varName.equals("RET")) {
             return "$v0";
         }
-        if (operand.isTemp()) {
-            return allocateTempRegToVar(operand, varAddressOffset, mipsVisitor, true);
-        } else {
-            if (operand.isAllocatedReg()) {
-                return operand.getReg();
-            }
-            return allocateTempRegToVar(operand, varAddressOffset, mipsVisitor, true);
+        if (operand.isAllocatedReg()) {
+            return operand.getReg();
         }
+        return allocateTempRegToVar(operand, varAddressOffset, mipsVisitor, intermediateCode,
+            true);
     }
 
     public String allocateTempRegToNumber(VarAddressOffset varAddressOffset,
-                                          MipsVisitor mipsVisitor) {
+                                          MipsVisitor mipsVisitor,
+                                          IntermediateCode intermediateCode) {
 
         for (String tempReg : tempRegs) {
             if (!usedTempRegs.contains(tempReg)) {
@@ -84,10 +90,11 @@ public class RegisterPool {
         setRecentLyUsedTempReg(tempReg);
         if (tempRegToVarMap.containsKey(tempReg)) {
             Operand tempVarName = tempRegToVarMap.get(tempReg);
-
-            int offset = varAddressOffset.getVarOffset(tempVarName);
-            MipsCode mipsCode = MipsCode.generateSW(tempReg, String.valueOf(offset), "$sp");
-            mipsVisitor.addMipsCode(mipsCode);
+            if (intermediateCode.getBasicBlock()
+                .findUsedVarNextCode(intermediateCode, tempVarName) !=
+                Integer.MAX_VALUE) {
+                tempVarName.storeToMemory(mipsVisitor, varAddressOffset, tempReg);
+            }
             varToTempRegMap.remove(tempVarName);
             tempRegToVarMap.remove(tempReg);
         }
@@ -97,7 +104,8 @@ public class RegisterPool {
     }
 
     public String allocateTempRegToVar(Operand varName, VarAddressOffset varAddressOffset,
-                                       MipsVisitor mipsVisitor, boolean load) {
+                                       MipsVisitor mipsVisitor, IntermediateCode intermediateCode,
+                                       boolean load) {
         if (varToTempRegMap.containsKey(varName)) {
             String reg = varToTempRegMap.get(varName);
             setRecentLyUsedTempReg(reg);
@@ -110,12 +118,8 @@ public class RegisterPool {
                 varToTempRegMap.put(varName, tempReg);
                 usedTempRegs.add(tempReg);
                 if (load) {
-                    MipsCode loadNewReg =
-                        MipsCode.generateLW(tempReg,
-                            String.valueOf(varAddressOffset.getVarOffset(varName)), "$sp");
-                    mipsVisitor.addMipsCode(loadNewReg);
+                    varName.loadToReg(mipsVisitor, varAddressOffset, tempReg);
                 }
-
                 return tempReg;
             }
         }
@@ -123,20 +127,18 @@ public class RegisterPool {
         setRecentLyUsedTempReg(tempReg);
         if (tempRegToVarMap.containsKey(tempReg)) {
             Operand tempVarName = tempRegToVarMap.get(tempReg);
-
-            int offset = varAddressOffset.getVarOffset(tempVarName);
-            MipsCode mipsCode = MipsCode.generateSW(tempReg, String.valueOf(offset), "$sp");
-            mipsVisitor.addMipsCode(mipsCode);
+            if (intermediateCode.getBasicBlock()
+                .findUsedVarNextCode(intermediateCode, tempVarName) !=
+                Integer.MAX_VALUE) {
+                tempVarName.storeToMemory(mipsVisitor, varAddressOffset, tempReg);
+            }
             varToTempRegMap.remove(tempVarName);
         }
         varToTempRegMap.put(varName, tempReg);
         tempRegToVarMap.put(tempReg, varName);
 
         if (load) {
-            MipsCode loadNewReg =
-                MipsCode.generateLW(tempReg, String.valueOf(varAddressOffset.getVarOffset(varName)),
-                    "$sp");
-            mipsVisitor.addMipsCode(loadNewReg);
+            varName.loadToReg(mipsVisitor, varAddressOffset, tempReg);
         }
 
         return tempReg;
@@ -217,9 +219,9 @@ public class RegisterPool {
 
     //得到寄存器，并把其中的值写回内存
     public String getTempReg(boolean isNumber, VarAddressOffset varAddressOffset,
-                             MipsVisitor mipsVisitor) {
+                             MipsVisitor mipsVisitor, IntermediateCode intermediateCode) {
         if (isNumber) {
-            return allocateTempRegToNumber(varAddressOffset, mipsVisitor);
+            return allocateTempRegToNumber(varAddressOffset, mipsVisitor, intermediateCode);
         }
         for (String tempReg : tempRegs) {
             if (!usedTempRegs.contains(tempReg)) {
@@ -233,9 +235,10 @@ public class RegisterPool {
 
         if (tempRegToVarMap.containsKey(tempReg)) {
             Operand tempVarName = tempRegToVarMap.get(tempReg);
-            int offset = varAddressOffset.getVarOffset(tempVarName);
-            MipsCode mipsCode = MipsCode.generateSW(tempReg, String.valueOf(offset), "$sp");
-            mipsVisitor.addMipsCode(mipsCode);
+            if (intermediateCode.getBasicBlock()
+                .findUsedVarNextCode(intermediateCode, tempVarName) != Integer.MAX_VALUE) {
+                tempVarName.storeToMemory(mipsVisitor, varAddressOffset, tempReg);
+            }
             varToTempRegMap.remove(tempVarName);
             tempRegToVarMap.remove(tempReg);
         }
@@ -243,32 +246,33 @@ public class RegisterPool {
         return tempReg;
     }
 
-    public void clearSpecialReg(String reg, VarAddressOffset varAddressOffset,
-                                MipsVisitor mipsVisitor) {
-        if (tempRegs.contains(reg)) {
+    public void clearSpecialReg(Operand operand, String reg, VarAddressOffset varAddressOffset,
+                                MipsVisitor mipsVisitor, IntermediateCode intermediateCode) {
+        if (usedTempRegs.contains(reg)) {
             setRecentLyUsedTempReg(reg);
             if (!tempRegToVarMap.containsKey(reg)) {
                 return;
             }
+            if (tempRegToVarMap.get(reg).equals(operand)) {
+                return;
+            }
             Operand tempVarName = tempRegToVarMap.get(reg);
-            int offset = varAddressOffset.getVarOffset(tempVarName);
-            MipsCode mipsCode = MipsCode.generateSW(reg, String.valueOf(offset), "$sp");
-            mipsVisitor.addMipsCode(mipsCode);
+            if (intermediateCode.getBasicBlock()
+                .findUsedVarNextCode(intermediateCode, tempVarName) !=
+                Integer.MAX_VALUE) {
+                tempVarName.storeToMemory(mipsVisitor, varAddressOffset, reg);
+            }
             varToTempRegMap.remove(tempVarName);
             tempRegToVarMap.remove(reg);
         }
     }
 
     public String allocateRegToVarNotLoad(Operand operand, VarAddressOffset varAddressOffset,
-                                          MipsVisitor mipsVisitor) {
-        if (operand.isTemp()) {
-            return allocateTempRegToVar(operand, varAddressOffset, mipsVisitor, false);
-        } else {
-            if (operand.isAllocatedReg()) {
-                return operand.getReg();
-            }
-            return allocateTempRegToVar(operand, varAddressOffset, mipsVisitor, false);
+                                          MipsVisitor mipsVisitor, IntermediateCode intermediateCode) {
+        if (operand.isAllocatedReg()) {
+            return operand.getReg();
         }
+        return allocateTempRegToVar(operand, varAddressOffset, mipsVisitor, intermediateCode,false);
     }
 
     public void clearAllTempRegs() {
@@ -278,8 +282,14 @@ public class RegisterPool {
         usedTempRegs = new HashSet<>();
     }
 
-    public ArrayList<String> getUsedTempRegs() {
-        return new ArrayList<>(tempRegToVarMap.keySet());
+    public ArrayList<String> getUsedTempRegs(HashSet<Operand> usedTempVars) {
+        ArrayList<String> regs = new ArrayList<>();
+        varToTempRegMap.forEach((k,v) -> {
+            if (usedTempVars.contains(k) || k.isLocal()) {
+                regs.add(v);
+            }
+        });
+        return regs;
     }
 
     public HashMap<Operand, String> getVarToTempRegMap() {
