@@ -39,6 +39,8 @@ public class SingleCalculateCode extends IntermediateCode {
         } else if (op == Operator.NOT) {
             mipsVisitor.addMipsCode(new MipsCompareCode("seq", targetReg, src1Reg, "$0"));
         }
+
+        registerPool.unFreeze(src1Reg);
     }
 
     @Override

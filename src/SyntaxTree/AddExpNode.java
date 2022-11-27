@@ -54,7 +54,6 @@ public class AddExpNode extends ParserNode {
         } else {
             Operand src1 = addExpNode.generateMidCodeAndReturnTempVar(intermediateVisitor);
             Operand src2 = mulExpNode.generateMidCodeAndReturnTempVar(intermediateVisitor);
-            Operand target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
             Operator operator = null;
             if (op == TokenType.PLUS) {
                 operator = Operator.ADD;
@@ -75,9 +74,22 @@ public class AddExpNode extends ParserNode {
                                 Integer.parseInt(src2.getName())),
                             Operand.OperandType.NUMBER);
                     }
+                } else {
+                    if (operator == Operator.ADD) {
+                        if (src1.isNUMBER() && src1.getName().equals("0")) {
+                            return src2;
+                        } else if (src2.isNUMBER() && src2.getName().equals("0")) {
+                            return src1;
+                        }
+                    } else if (operator == Operator.SUB) {
+                        if (src2.isNUMBER() && src2.getName().equals("0")) {
+                            return src1;
+                        }
+                    }
                 }
             }
 
+            Operand target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
             CalculateCode calculateCode = new CalculateCode(target, src1, src2, operator);
             intermediateVisitor.addIntermediateCode(calculateCode);
             return target;

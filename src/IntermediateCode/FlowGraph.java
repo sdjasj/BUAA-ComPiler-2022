@@ -16,7 +16,7 @@ public class FlowGraph {
         this.basicBlocks = new ArrayList<>();
     }
 
-    public void buildBasicBlocks(ArrayList<IntermediateCode> intermediateCodes) {
+    public void buildBasicBlocks(ArrayList<IntermediateCode> intermediateCodes, Function function) {
         intermediateCodes.get(0).setBasicBlockBegin(true);
         intermediateCodes.get(intermediateCodes.size() - 1).setBasicBlockBegin(true);
         //基本块开头
@@ -35,6 +35,10 @@ public class FlowGraph {
                         break;
                     }
                 }
+//                for (int k = 0; k < intermediateCodes.size(); k++) {
+//                    intermediateCodes.get(k).output();
+//                }
+//                intermediateCode.output();
                 intermediateCodes.get(j + 1).setBasicBlockBegin(true);
                 int k = i + 1;
                 //跳转下一条语句
@@ -52,7 +56,7 @@ public class FlowGraph {
 
         int i = 0;
         int blockCnt = 0;
-        BasicBlock basicBlock = new BasicBlock(blockCnt++);
+        BasicBlock basicBlock = new BasicBlock(blockCnt++, function);
         while (i < intermediateCodes.size()) {
             if (intermediateCodes.get(i).isBasicBlockBegin) {
                 if (intermediateCodes.get(i) instanceof LabelCode) {
@@ -69,7 +73,7 @@ public class FlowGraph {
                     i++;
                 }
                 basicBlocks.add(basicBlock);
-                basicBlock = new BasicBlock(blockCnt++);
+                basicBlock = new BasicBlock(blockCnt++, function);
             } else {
                 i++;
             }

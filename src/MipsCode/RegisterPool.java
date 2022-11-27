@@ -15,8 +15,10 @@ public class RegisterPool {
     private HashMap<Operand, String> varToTempRegMap;
     private LinkedList<String> LRUTempRegs;
     private HashSet<String> usedTempRegs;
-    private ArrayList<String> tempRegs = new ArrayList<String>() {
+    private HashSet<String> freezeRegs;
+    public static ArrayList<String> tempRegs = new ArrayList<String>() {
         {
+            add("$a0");
             add("$a1");
             add("$a2");
             add("$a3");
@@ -30,8 +32,6 @@ public class RegisterPool {
             add("$t7");
             add("$t8");
             add("$t9");
-            add("$v1");
-            add("$a0");
         }
     };
 
@@ -40,6 +40,19 @@ public class RegisterPool {
         this.varToTempRegMap = new HashMap<>();
         this.LRUTempRegs = new LinkedList<>();
         this.usedTempRegs = new HashSet<>();
+        this.freezeRegs = new HashSet<>();
+    }
+
+    public static void setTempRegs(ArrayList<String> tempRegs) {
+        RegisterPool.tempRegs = tempRegs;
+    }
+
+    public void freeze(String reg) {
+        freezeRegs.add(reg);
+    }
+
+    public void unFreeze(String reg) {
+        freezeRegs.remove(reg);
     }
 
     public Operand getVarNameOfTempReg(String reg) {
@@ -47,13 +60,58 @@ public class RegisterPool {
     }
 
     public String getLongestNotUsedTempReg() {
-//        for (int i = LRUTempRegs.size() - 1; i >= 0; i--) {
-//            if (tempRegToVarMap.containsKey(LRUTempRegs.get(i)) &&
-//                tempRegToVarMap.get(LRUTempRegs.get(i)).isTemp()) {
-//                return LRUTempRegs.get(i);
-//            }
-//        }
+        for (int i = LRUTempRegs.size() - 1; i >= 0; i--) {
+            if (!tempRegToVarMap.containsKey(LRUTempRegs.get(i)) ||
+                tempRegToVarMap.containsKey(LRUTempRegs.get(i)) &&
+                    tempRegToVarMap.get(LRUTempRegs.get(i)).isTemp()) {
+                return LRUTempRegs.get(i);
+            }
+        }
         return LRUTempRegs.get(LRUTempRegs.size() - 1);
+    }
+
+    public String getOptTempReg(IntermediateCode intermediateCode, MipsVisitor mipsVisitor,
+                                VarAddressOffset varAddressOffset) {
+        String ans = null;
+        Operand ansVar = null;
+        int maxv = Integer.MIN_VALUE;
+        for (String tempReg : tempRegs) {
+            if (!freezeRegs.contains(tempReg)) {
+                Operand varName = tempRegToVarMap.get(tempReg);
+                if (varName == null) {
+//                    System.err.println(intermediateCode.getTarget());
+//                    System.err.println(varToTempRegMap);
+//                    System.err.println(freezeRegs);
+                    ans = tempReg;
+                    maxv = Integer.MAX_VALUE;
+                    break;
+                }
+                int t = intermediateCode.getBasicBlock().findUsedVarNextCode(intermediateCode, varName);
+//                if (varName.getName().equals("t@26")) {
+//                    System.err.println(intermediateCode);
+//                    System.err.println(varName);
+//                    System.err.println(t);
+//                }
+                if (t > maxv) {
+                    maxv = t;
+                    ans = tempReg;
+                    ansVar = varName;
+                }
+            }
+        }
+//        if (ansVar != null && ansVar.getName().equals("t@26")) {
+//            System.err.println("inter " + intermediateCode);
+//            System.err.println(ansVar);
+//            System.err.println(maxv);
+//        }
+//        System.err.println("inter " + intermediateCode.getTarget());
+//        System.err.println(ansVar);
+//        System.err.println(maxv);
+
+        if (ansVar != null && maxv != Integer.MAX_VALUE) {
+            ansVar.storeToMemory(mipsVisitor, varAddressOffset, ans);
+        }
+        return ans;
     }
 
     public void setRecentLyUsedTempReg(String reg) {
@@ -80,25 +138,21 @@ public class RegisterPool {
 
         for (String tempReg : tempRegs) {
             if (!usedTempRegs.contains(tempReg)) {
-                setRecentLyUsedTempReg(tempReg);
                 usedTempRegs.add(tempReg);
+                freeze(tempReg);
                 return tempReg;
             }
         }
-        String tempReg = getLongestNotUsedTempReg();
 
-        setRecentLyUsedTempReg(tempReg);
+        String tempReg = getOptTempReg(intermediateCode, mipsVisitor, varAddressOffset);
+
         if (tempRegToVarMap.containsKey(tempReg)) {
             Operand tempVarName = tempRegToVarMap.get(tempReg);
-            if (intermediateCode.getBasicBlock()
-                .findUsedVarNextCode(intermediateCode, tempVarName) !=
-                Integer.MAX_VALUE) {
-                tempVarName.storeToMemory(mipsVisitor, varAddressOffset, tempReg);
-            }
             varToTempRegMap.remove(tempVarName);
             tempRegToVarMap.remove(tempReg);
         }
 
+        freeze(tempReg);
 
         return tempReg;
     }
@@ -108,12 +162,11 @@ public class RegisterPool {
                                        boolean load) {
         if (varToTempRegMap.containsKey(varName)) {
             String reg = varToTempRegMap.get(varName);
-            setRecentLyUsedTempReg(reg);
             return reg;
         }
+
         for (String tempReg : tempRegs) {
             if (!usedTempRegs.contains(tempReg)) {
-                setRecentLyUsedTempReg(tempReg);
                 tempRegToVarMap.put(tempReg, varName);
                 varToTempRegMap.put(varName, tempReg);
                 usedTempRegs.add(tempReg);
@@ -123,19 +176,23 @@ public class RegisterPool {
                 return tempReg;
             }
         }
-        String tempReg = getLongestNotUsedTempReg();
-        setRecentLyUsedTempReg(tempReg);
+
+        String tempReg = getOptTempReg(intermediateCode, mipsVisitor, varAddressOffset);
+
         if (tempRegToVarMap.containsKey(tempReg)) {
             Operand tempVarName = tempRegToVarMap.get(tempReg);
-            if (intermediateCode.getBasicBlock()
-                .findUsedVarNextCode(intermediateCode, tempVarName) !=
-                Integer.MAX_VALUE) {
-                tempVarName.storeToMemory(mipsVisitor, varAddressOffset, tempReg);
-            }
             varToTempRegMap.remove(tempVarName);
         }
         varToTempRegMap.put(varName, tempReg);
         tempRegToVarMap.put(tempReg, varName);
+
+//        if (varName.getName().equals("t@26")) {
+//            System.err.println(varName + " " +varToTempRegMap);
+//            System.err.println(varName + " " + tempRegToVarMap);
+//        } else if (varName.getName().equals("t@27")) {
+//            System.err.println(varName + " " +varToTempRegMap);
+//            System.err.println(varName + " " + tempRegToVarMap);
+//        }
 
         if (load) {
             varName.loadToReg(mipsVisitor, varAddressOffset, tempReg);
@@ -225,23 +282,19 @@ public class RegisterPool {
         }
         for (String tempReg : tempRegs) {
             if (!usedTempRegs.contains(tempReg)) {
-                setRecentLyUsedTempReg(tempReg);
                 usedTempRegs.add(tempReg);
+                freeze(tempReg);
                 return tempReg;
             }
         }
-        String tempReg = getLongestNotUsedTempReg();
-        setRecentLyUsedTempReg(tempReg);
-
+        String tempReg = getOptTempReg(intermediateCode, mipsVisitor, varAddressOffset);
         if (tempRegToVarMap.containsKey(tempReg)) {
             Operand tempVarName = tempRegToVarMap.get(tempReg);
-            if (intermediateCode.getBasicBlock()
-                .findUsedVarNextCode(intermediateCode, tempVarName) != Integer.MAX_VALUE) {
-                tempVarName.storeToMemory(mipsVisitor, varAddressOffset, tempReg);
-            }
             varToTempRegMap.remove(tempVarName);
             tempRegToVarMap.remove(tempReg);
         }
+
+        freeze(tempReg);
 
         return tempReg;
     }
@@ -249,7 +302,6 @@ public class RegisterPool {
     public void clearSpecialReg(Operand operand, String reg, VarAddressOffset varAddressOffset,
                                 MipsVisitor mipsVisitor, IntermediateCode intermediateCode) {
         if (usedTempRegs.contains(reg)) {
-            setRecentLyUsedTempReg(reg);
             if (!tempRegToVarMap.containsKey(reg)) {
                 return;
             }
@@ -280,6 +332,7 @@ public class RegisterPool {
         varToTempRegMap = new HashMap<>();
         LRUTempRegs = new LinkedList<>();
         usedTempRegs = new HashSet<>();
+        freezeRegs = new HashSet<>();
     }
 
     public ArrayList<String> getUsedTempRegs(HashSet<Operand> usedTempVars) {

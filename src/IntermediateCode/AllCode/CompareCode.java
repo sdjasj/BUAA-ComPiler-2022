@@ -72,5 +72,8 @@ public class CompareCode extends IntermediateCode {
         }
 
         mipsVisitor.addMipsCode(new MipsCompareCode(mipsOp, targetReg, src1Reg, src2Reg));
+        registerPool.unFreeze(src1Reg);
+        registerPool.unFreeze(src2Reg);
+        registerPool.unFreeze(targetReg);
     }
 }

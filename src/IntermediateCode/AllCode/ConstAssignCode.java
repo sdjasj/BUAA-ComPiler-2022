@@ -59,6 +59,7 @@ public class ConstAssignCode extends IntermediateCode {
             }
         }
 
+        registerPool.unFreeze(tempReg);
     }
 
     @Override

@@ -53,7 +53,6 @@ public class Compiler {
 //        intermediateVisitor.testPrint();
         MipsVisitor mipsVisitor = new MipsVisitor();
         intermediateVisitor.IntermediateToMips(mipsVisitor);
-        //TODO:写回临时寄存器的时机
         mipsVisitor.output();
         ps.close();
     }

@@ -28,12 +28,14 @@ public class OutputCode extends IntermediateCode {
             if (source1.isNUMBER()) {
                 mipsVisitor.addMipsCode(MipsCode.generateLi("$a0", source1.getName()));
             } else if (source1.isGlobal()) {
-                mipsVisitor.addMipsCode(MipsCode.generateLW("$a0", source1.getName(), "$0"));
+                mipsVisitor.addMipsCode(MipsCode.generateLA(source1.getName(), "$1"));
+                mipsVisitor.addMipsCode(MipsCode.generateLW("$a0", "0", "$1"));
             } else {
                 String targetReg = getSrcReg(source1, varAddressOffset, mipsVisitor, registerPool);
 //                System.err.println(source1);
 //                System.err.println(targetReg);
                 mipsVisitor.addMipsCode(MipsCode.generateMOVE("$a0", targetReg));
+                registerPool.unFreeze(targetReg);
             }
             //v0 is need to store?
             mipsVisitor.addMipsCode(MipsCode.generateLi("$v0", "1"));

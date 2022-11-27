@@ -95,6 +95,7 @@ public class Operand {
     }
 
     public void storeToMemory(MipsVisitor mipsVisitor, VarAddressOffset varAddressOffset, String reg) {
+        mipsVisitor.addMipsCode(MipsCode.generateComment("store " + name));
         if (isGlobal()) {
             mipsVisitor.addMipsCode(MipsCode.generateSW(reg, name, "$0"));
         } else if (isLocal() || isTemp()) {

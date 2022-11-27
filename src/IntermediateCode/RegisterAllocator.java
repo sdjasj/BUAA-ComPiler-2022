@@ -9,7 +9,7 @@ import java.util.Map;
 public class RegisterAllocator {
     private ConflictGraph conflictGraph;
 
-    private ArrayList<String> globalRegs = new ArrayList<String>() {
+    public static ArrayList<String> globalRegs = new ArrayList<String>() {
         {
             add("$s0");
             add("$s1");
@@ -23,11 +23,17 @@ public class RegisterAllocator {
             add("$gp");
             add("$k0");
             add("$k1");
+            add("$ra");
+            add("$v1");
         }
     };
 
     public RegisterAllocator(ConflictGraph conflictGraph) {
         this.conflictGraph = conflictGraph;
+    }
+
+    public static void setGlobalRegs(ArrayList<String> globalRegs) {
+        RegisterAllocator.globalRegs = globalRegs;
     }
 
     public void allocGlobalReg() {

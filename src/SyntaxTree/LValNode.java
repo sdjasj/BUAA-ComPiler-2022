@@ -404,9 +404,11 @@ public class LValNode extends ParserNode {
                         String.valueOf(Integer.parseInt(target.getName()) * 4),
                         Operand.OperandType.NUMBER);
                 } else {
+                    Operand temp = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
                     intermediateVisitor.addIntermediateCode(
-                        new CalculateCode(target, target, Operand.getNewOperand("4",
+                        new CalculateCode(temp, target, Operand.getNewOperand("4",
                             Operand.OperandType.NUMBER), Operator.MUL));
+                    target = temp;
                 }
                 Operand addr = Operand.getNewOperand(TCode.reName(name, item.getBlockDepth()),
                     Operand.OperandType.ADDRESS);

@@ -27,22 +27,26 @@ public class FunctionPushCode extends IntermediateCode {
     public void toMips(MipsVisitor mipsVisitor, VarAddressOffset varAddressOffset,
                        RegisterPool registerPool) {
 
+        mipsVisitor.addMipsCode(MipsCode.generateComment("push " + source1));
         if (source1.isNUMBER()) {
             String reg = registerPool.getTempReg(true, varAddressOffset, mipsVisitor, this);
             mipsVisitor.addMipsCode(MipsCode.generateLi(reg, source1.getName()));
             mipsVisitor.addMipsCode(
                 MipsCode.generateSW(reg, String.valueOf(-(offset * 4 + 4)), "$sp"));
+            registerPool.unFreeze(reg);
         } else if (source1.isGlobal()) {
             if (source1.isAddress()) {
                 String reg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor, this);
                 mipsVisitor.addMipsCode(MipsCode.generateLA(source1.getName(), reg));
                 mipsVisitor.addMipsCode(
                     MipsCode.generateSW(reg, String.valueOf(-(offset * 4 + 4)), "$sp"));
+                registerPool.unFreeze(reg);
             } else if (source1.isVar()) {
                 String reg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor, this);
                 mipsVisitor.addMipsCode(MipsCode.generateLW(reg, source1.getName(), "$0"));
                 mipsVisitor.addMipsCode(
                     MipsCode.generateSW(reg, String.valueOf(-(offset * 4 + 4)), "$sp"));
+                registerPool.unFreeze(reg);
             } else {
                 System.err.println("error in toMips of funtion push by global");
             }
@@ -54,6 +58,7 @@ public class FunctionPushCode extends IntermediateCode {
                         String.valueOf(varAddressOffset.getVarOffset(source1)), "$sp"));
                 mipsVisitor.addMipsCode(
                     MipsCode.generateSW(tempReg, String.valueOf(-(offset * 4 + 4)), "$sp"));
+                registerPool.unFreeze(tempReg);
             } else if (source1.isVar()) {
                 String reg = registerPool.allocateRegToVarLoad(source1, varAddressOffset,
                     mipsVisitor, this);
@@ -81,6 +86,8 @@ public class FunctionPushCode extends IntermediateCode {
                         MipsCode.generateADDIU(tempReg, "$sp", String.valueOf(arrayOffset)));
                     mipsVisitor.addMipsCode(
                         MipsCode.generateSW(tempReg, String.valueOf(-(offset * 4 + 4)), "$sp"));
+
+                    registerPool.unFreeze(tempReg);
                 }
             }
         }

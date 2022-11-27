@@ -36,6 +36,7 @@ public class FunctionCallCode extends IntermediateCode {
         basicBlock.addUsedTempVarForFunctionCall(usedTempVars, this);
         HashSet<String> regs = new HashSet<>(registerPool.getUsedTempRegs(usedTempVars));
 
+
         for (String reg : regs) {
 //            System.err.println(reg);
 //            System.err.println(registerPool.getVarNameOfTempReg(reg));

@@ -16,6 +16,7 @@ import IntermediateCode.Operand;
 import IntermediateCode.Operator;
 import IntermediateCode.TCode;
 import Lexer.Token;
+import Tool.Optimizer;
 import Tool.Pair;
 
 import java.util.ArrayList;
@@ -224,15 +225,31 @@ public class StmtNode extends ParserNode {
                 intermediateVisitor.addIntermediateCode(new LabelCode(elseEndLable));
             }
         } else if (stmtType == WHILE) {
-            String falseLabel = TCode.genNewLable();
-            String beginLabel = TCode.genNewLable();
-            intermediateVisitor.addIntermediateCode(new LabelCode(beginLabel));
-            whileCondNode.generateIntermediate(intermediateVisitor, null, falseLabel);
-            whileStmtNode.generateIntermediate(intermediateVisitor,
-                new Pair<>(beginLabel, falseLabel));
-            intermediateVisitor.addIntermediateCode(
-                new JumpCode(Operand.getNewOperand(beginLabel, Operand.OperandType.ADDRESS), Operator.JUMP));
-            intermediateVisitor.addIntermediateCode(new LabelCode(falseLabel));
+            if (Optimizer.BranchOptimizer) {
+                String falseLabel = TCode.genNewLable();
+                String beginLabel = TCode.genNewLable();
+                String headLabel = TCode.genNewLable();
+                whileCondNode.generateIntermediate(intermediateVisitor, null, falseLabel);
+                intermediateVisitor.addIntermediateCode(new LabelCode(beginLabel));
+                whileStmtNode.generateIntermediate(intermediateVisitor,
+                    new Pair<>(headLabel, falseLabel));
+                intermediateVisitor.addIntermediateCode(new LabelCode(headLabel));
+                whileCondNode.generateIntermediate(intermediateVisitor, beginLabel, null);
+//            intermediateVisitor.addIntermediateCode(
+//                new JumpCode(Operand.getNewOperand(beginLabel, Operand.OperandType.ADDRESS), Operator.JUMP));
+                intermediateVisitor.addIntermediateCode(new LabelCode(falseLabel));
+            } else {
+                String falseLabel = TCode.genNewLable();
+                String beginLabel = TCode.genNewLable();
+                intermediateVisitor.addIntermediateCode(new LabelCode(beginLabel));
+                whileCondNode.generateIntermediate(intermediateVisitor, null, falseLabel);
+                whileStmtNode.generateIntermediate(intermediateVisitor,
+                    new Pair<>(beginLabel, falseLabel));
+                intermediateVisitor.addIntermediateCode(
+                    new JumpCode(Operand.getNewOperand(beginLabel, Operand.OperandType.ADDRESS),
+                        Operator.JUMP));
+                intermediateVisitor.addIntermediateCode(new LabelCode(falseLabel));
+            }
         } else if (stmtType == CONTINUE) {
             String beginLoopLabel = loop.getFirst();
             intermediateVisitor.addIntermediateCode(

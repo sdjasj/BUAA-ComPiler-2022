@@ -66,23 +66,47 @@ public class MulExpNode extends ParserNode {
                 operator = Operator.MOD;
             }
 
-            if (Optimizer.ConstOptimizer && src1.isNUMBER() && src2.isNUMBER()) {
-                if (operator == Operator.MUL) {
-                    return Operand.getNewOperand(
-                        String.valueOf(Integer.parseInt(src1.getName()) *
-                            Integer.parseInt(src2.getName())),
-                        Operand.OperandType.NUMBER);
+            if (Optimizer.ConstOptimizer) {
+                if (src1.isNUMBER() && src2.isNUMBER()) {
+                    if (operator == Operator.MUL) {
+                        return Operand.getNewOperand(
+                            String.valueOf(Integer.parseInt(src1.getName()) *
+                                Integer.parseInt(src2.getName())),
+                            Operand.OperandType.NUMBER);
+                    } else if (operator == Operator.DIV) {
+                        return Operand.getNewOperand(
+                            String.valueOf(Integer.parseInt(src1.getName()) /
+                                Integer.parseInt(src2.getName())),
+                            Operand.OperandType.NUMBER);
+                    } else if (operator == Operator.MOD) {
+                        return Operand.getNewOperand(
+                            String.valueOf(Integer.parseInt(src1.getName()) %
+                                Integer.parseInt(src2.getName())),
+                            Operand.OperandType.NUMBER);
+                    }
+                } else if (operator == Operator.MUL) {
+                    if (src1.isNUMBER() && src1.getName().equals("1")) {
+                        return src2;
+                    } else if (src2.isNUMBER() && src2.getName().equals("1")) {
+                        return src1;
+                    } else if (src1.isNUMBER() && src1.getName().equals("0") ||
+                        src2.isNUMBER() && src2.getName().equals("0")) {
+                        return Operand.getNewOperand("0", Operand.OperandType.NUMBER);
+                    }
                 } else if (operator == Operator.DIV) {
-                    return Operand.getNewOperand(
-                        String.valueOf(Integer.parseInt(src1.getName()) /
-                            Integer.parseInt(src2.getName())),
-                        Operand.OperandType.NUMBER);
+                    if (src2.isNUMBER() && src2.getName().equals("1")) {
+                        return src1;
+                    } else if (src1.isNUMBER() && src1.getName().equals("0")) {
+                        return Operand.getNewOperand("0", Operand.OperandType.NUMBER);
+                    }
                 } else if (operator == Operator.MOD) {
-                    return Operand.getNewOperand(
-                        String.valueOf(Integer.parseInt(src1.getName()) %
-                            Integer.parseInt(src2.getName())),
-                        Operand.OperandType.NUMBER);
+                    if (src2.isNUMBER() && src2.getName().equals("1")) {
+                        return Operand.getNewOperand("0", Operand.OperandType.NUMBER);
+                    } else if (src1.isNUMBER() && src1.getName().equals("0")) {
+                        return Operand.getNewOperand("0", Operand.OperandType.NUMBER);
+                    }
                 }
+
             }
 
             CalculateCode calculateCode = new CalculateCode(target, src1, src2, operator);

@@ -50,12 +50,16 @@ public class MemoryCode extends IntermediateCode {
     @Override
     public void toMips(MipsVisitor mipsVisitor, VarAddressOffset varAddressOffset,
                        RegisterPool registerPool) {
-        String targetReg;
         if (op == Operator.LOAD) {
-            targetReg = registerPool.allocateRegToVarNotLoad(target, varAddressOffset, mipsVisitor, this);
+            mipsVisitor.addMipsCode(MipsCode.generateComment(
+                Operator.LOAD + " " + target + " FROM " + source1 + " OFFSET " + source2));
         } else {
-            targetReg = getSrcReg(target, varAddressOffset, mipsVisitor, registerPool);
+            mipsVisitor.addMipsCode(MipsCode.generateComment(
+                Operator.STORE + " " + target + " TO " + source1 + " OFFSET " + source2));
         }
+
+
+        String targetReg;
 
         String source2Reg = getSrcReg(source2, varAddressOffset, mipsVisitor, registerPool);
 //        if (source2.isNUMBER()) {
@@ -71,12 +75,26 @@ public class MemoryCode extends IntermediateCode {
 //                    mipsVisitor);
 //        }
 
+
         if (source1.isGlobal()) {
             //操作的内存名称为全局变量
+            if (op == Operator.LOAD) {
+                targetReg = registerPool.allocateRegToVarNotLoad(target, varAddressOffset, mipsVisitor, this);
+            } else {
+                targetReg = getSrcReg(target, varAddressOffset, mipsVisitor, registerPool);
+            }
             if (op == Operator.LOAD) {
                 mipsVisitor.addMipsCode(MipsCode.generateLW(targetReg, source1.getName(), source2Reg));
             } else if (op == Operator.STORE) {
                 mipsVisitor.addMipsCode(MipsCode.generateSW(targetReg, source1.getName(), source2Reg));
+            }
+
+            if (target.isNUMBER()) {
+                registerPool.unFreeze(targetReg);
+            }
+
+            if (source2.isNUMBER()) {
+                registerPool.unFreeze(source2Reg);
             }
             return;
         } else {
@@ -86,18 +104,25 @@ public class MemoryCode extends IntermediateCode {
                 //参数
                 mipsVisitor.addMipsCode(MipsCode.generateLW(tempReg,
                     String.valueOf(varAddressOffset.getArrayOffset(source1, 0)), "$sp"));
-                mipsVisitor.addMipsCode(MipsCode.generateADDU(source2Reg, source2Reg, tempReg));
+                mipsVisitor.addMipsCode(MipsCode.generateADDU(tempReg, source2Reg, tempReg));
+                registerPool.unFreeze(source2Reg);
+                source2Reg = tempReg;
             } else {
                 //普通局部变量
                 mipsVisitor.addMipsCode(MipsCode.generateADDIU(tempReg, "$sp",
                     String.valueOf(varAddressOffset.getArrayOffset(source1, 0))));
-                mipsVisitor.addMipsCode(MipsCode.generateADDU(source2Reg, source2Reg, tempReg));
+                mipsVisitor.addMipsCode(MipsCode.generateADDU(tempReg, source2Reg, tempReg));
+                registerPool.unFreeze(source2Reg);
+                source2Reg = tempReg;
             }
 
 
 
-
-
+            if (op == Operator.LOAD) {
+                targetReg = registerPool.allocateRegToVarNotLoad(target, varAddressOffset, mipsVisitor, this);
+            } else {
+                targetReg = getSrcReg(target, varAddressOffset, mipsVisitor, registerPool);
+            }
 
             if (op == Operator.LOAD) {
                 mipsVisitor.addMipsCode(MipsCode.generateLW(targetReg, "0", source2Reg));
@@ -105,6 +130,10 @@ public class MemoryCode extends IntermediateCode {
                 mipsVisitor.addMipsCode(MipsCode.generateSW(targetReg, "0", source2Reg));
             }
         }
+
+        registerPool.unFreeze(targetReg);
+
+        registerPool.unFreeze(source2Reg);
 
     }
 

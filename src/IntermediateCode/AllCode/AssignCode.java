@@ -22,7 +22,8 @@ public class AssignCode extends IntermediateCode {
 
         String src1Reg = getSrcReg(source1, varAddressOffset, mipsVisitor, registerPool);
         if (target.isGlobal()) {
-            MipsCode storeCode = MipsCode.generateSW(src1Reg, target.getName(), "$0");
+            mipsVisitor.addMipsCode(MipsCode.generateLA(target.getName(), "$1"));
+            MipsCode storeCode = MipsCode.generateSW(src1Reg, "0", "$1");
             mipsVisitor.addMipsCode(storeCode);
         } else {
             String targetReg =
@@ -32,6 +33,8 @@ public class AssignCode extends IntermediateCode {
                 MipsCode.generateMOVE(targetReg, src1Reg);
             mipsVisitor.addMipsCode(moveCode);
         }
+
+        registerPool.unFreeze(src1Reg);
 
 
 //        if (mipsVisitor.varIsGlobal(target.getName())) {

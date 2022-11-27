@@ -50,6 +50,22 @@ public class IntermediateCode {
         return op;
     }
 
+    public void setOp(Operator op) {
+        this.op = op;
+    }
+
+    public void setTarget(Operand target) {
+        this.target = target;
+    }
+
+    public void setSource1(Operand source1) {
+        this.source1 = source1;
+    }
+
+    public void setSource2(Operand source2) {
+        this.source2 = source2;
+    }
+
     public void output() {
 
     }
@@ -80,6 +96,9 @@ public class IntermediateCode {
         String reg = null;
         if (src.isNUMBER()) {
             //数字
+            if (src.getName().equals("0")) {
+                return "$0";
+            }
             reg =
                 registerPool.getTempReg(true, varAddressOffset, mipsVisitor, this);
             MipsCode mipsCode = MipsCode.generateLi(reg, src.getName());
@@ -88,7 +107,8 @@ public class IntermediateCode {
             //全局变量
             if (src.isVar()) {
                 reg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor, this);
-                mipsVisitor.addMipsCode(MipsCode.generateLW(reg, src.getName(), "$0"));
+                mipsVisitor.addMipsCode(MipsCode.generateLA(src.getName(), "$1"));
+                mipsVisitor.addMipsCode(MipsCode.generateLW(reg, "0", "$1"));
             } else if (src.isAddress()) {
                 reg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor, this);
                 mipsVisitor.addMipsCode(MipsCode.generateLA(src.getName(), reg));
@@ -111,6 +131,9 @@ public class IntermediateCode {
             if (src.isVar()) {
                 reg = registerPool.allocateRegToVarLoad(src, varAddressOffset,
                     mipsVisitor, this);
+//                if (reg == null) {
+//                    System.err.println(src);
+//                }
             } else if (src.isAddress()) {
 //                if (src.getName().startsWith("t@")) {
 //                    System.err.println(151515151);
@@ -118,7 +141,7 @@ public class IntermediateCode {
 //                        mipsVisitor);
 //                } else {
                 int arrayOffset = varAddressOffset.getVarOffset(src);
-                reg = registerPool.getTempReg(true, varAddressOffset, mipsVisitor, this);
+                reg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor, this);
                 mipsVisitor.addMipsCode(
                     MipsCode.generateADDIU(reg, "$sp", String.valueOf(arrayOffset)));
             } else {
@@ -169,5 +192,10 @@ public class IntermediateCode {
             return false;
         }
         return id == ((IntermediateCode) obj).id;
+    }
+
+    @Override
+    public String toString() {
+        return target + " " + source1 + " " + op + " " + source2;
     }
 }

@@ -31,11 +31,20 @@ public class Function {
     private VarAddressOffset varAddressOffset;
     private RegisterPool registerPool;
     private ConflictGraph conflictGraph;
+    private boolean callOtherFunc = false;
 
     public Function(String name) {
         this.name = name;
         this.intermediateCodes = new ArrayList<>();
         this.flowGraph = new FlowGraph();
+    }
+
+    public boolean isCallOtherFunc() {
+        return callOtherFunc;
+    }
+
+    public void setCallOtherFunc(boolean callOtherFunc) {
+        this.callOtherFunc = callOtherFunc;
     }
 
     public void addIntermediateCode(IntermediateCode intermediateCode) {
@@ -92,12 +101,13 @@ public class Function {
     }
 
     public void buildBasicBlocks() {
-        flowGraph.buildBasicBlocks(intermediateCodes);
+        flowGraph.buildBasicBlocks(intermediateCodes, this);
     }
 
     public void basicBlockOptimize() {
         BlockOptimizer.activeVarAnalyze(flowGraph);
         BlockOptimizer.deleteDeadCode(flowGraph);
+        BlockOptimizer.peepholes(flowGraph);
     }
 
     public void colorAllocate() {
@@ -112,15 +122,19 @@ public class Function {
         varAddressOffset = new VarAddressOffset(0);
         registerPool = new RegisterPool();
         ArrayList<BasicBlock> basicBlocks = flowGraph.getBasicBlocks();
+        int cnt = 0;
         for (BasicBlock basicBlock : basicBlocks) {
-            mipsVisitor.addMipsCode(MipsCode.generateComment("BasicBlock"));
+            mipsVisitor.addMipsCode(MipsCode.generateComment("BasicBlock: " + cnt));
+            cnt++;
             if (basicBlock.isBegin()) {
                 mipsVisitor.addMipsCode(MipsCode.generateTag(getName()));
                 //确定变量的空间
                 //函数参数
                 getParamOffset(varAddressOffset);
                 //ra
-                varAddressOffset.addReg("$ra");
+                if (isCallOtherFunc()) {
+                    varAddressOffset.addReg("$ra");
+                }
                 //全局寄存器
                 varAddressOffset.addGlobalRegsAddress(conflictGraph);
 //                varAddressOffset.addAllRegs(registerPool);
@@ -134,10 +148,12 @@ public class Function {
                 MipsCode mipsCode = MipsCode.generateADDIU("$sp", "$sp", String.valueOf(-offset));
                 mipsVisitor.addMipsCode(mipsCode);
 
-                MipsCode raStored =
-                    MipsCode.generateSW("$ra", String.valueOf(varAddressOffset.getRegOffset("$ra")),
-                        "$sp");
-                mipsVisitor.addMipsCode(raStored);
+                if (isCallOtherFunc()) {
+                    MipsCode raStored =
+                        MipsCode.generateSW("$ra", String.valueOf(varAddressOffset.getRegOffset("$ra")),
+                            "$sp");
+                    mipsVisitor.addMipsCode(raStored);
+                }
 
                 //现在全局寄存器全存
                 if (!isMain) {
@@ -175,6 +191,7 @@ public class Function {
                     intermediateCode.toMips(mipsVisitor, varAddressOffset, registerPool);
                 } else if (i == intermediateCodes.size() - 1) {
                     intermediateCode.toMips(mipsVisitor, varAddressOffset, registerPool);
+                    storeRegs(mipsVisitor, basicBlock);
                 } else {
                     intermediateCode.toMips(mipsVisitor, varAddressOffset, registerPool);
                 }

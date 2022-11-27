@@ -36,6 +36,14 @@ public class IntermediateVisitor {
         }
     }
 
+    public void setCallFunction() {
+        curFunction.setCallOtherFunc(true);
+    }
+
+    public IntermediateCode getCurIntermediateCode() {
+        return intermediateCodes.get(intermediateCodes.size() - 1);
+    }
+
     public void addIntermediateCode(IntermediateCode intermediateCode) {
         this.intermediateCodes.add(intermediateCode);
         curFunction.addIntermediateCode(intermediateCode);

@@ -87,5 +87,7 @@ public class BranchCode extends IntermediateCode {
             mipsOp = "bnez";
         }
         mipsVisitor.addMipsCode(new MipsBranchCode(mipsOp, target.getName(), src1Reg, src2Reg));
+        registerPool.unFreeze(src1Reg);
+        registerPool.unFreeze(src2Reg);
     }
 }

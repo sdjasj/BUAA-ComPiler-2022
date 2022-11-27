@@ -3,6 +3,8 @@ package IntermediateCode;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import IntermediateCode.AllCode.AssignCode;
+import IntermediateCode.AllCode.CalculateCode;
 import IntermediateCode.AllCode.InputCode;
 import Tool.Pair;
 
@@ -19,8 +21,9 @@ public class BasicBlock {
     private HashSet<IntermediateCode> reachOutSet = new HashSet<>();
     private boolean isBegin;
     private int id;
+    private Function function;
 
-    public BasicBlock(int id) {
+    public BasicBlock(int id, Function function) {
         this.intermediateCodes = new ArrayList<>();
         this.tags = new HashSet<>();
         this.successor = new HashSet<>();
@@ -28,6 +31,12 @@ public class BasicBlock {
         this.usedSet = new HashSet<>();
         this.defSet = new HashSet<>();
         this.id = id;
+        this.function = function;
+    }
+
+
+    public Function getFunction() {
+        return function;
     }
 
     public void addSuccessor(BasicBlock basicBlock) {
@@ -137,18 +146,20 @@ public class BasicBlock {
 
     public int findUsedVarNextCode(IntermediateCode curCode, Operand operand) {
         int pos = intermediateCodes.indexOf(curCode);
-        for (int i = pos + 1; i < intermediateCodes.size(); i++) {
+        for (int i = pos; i < intermediateCodes.size(); i++) {
             IntermediateCode intermediateCode = intermediateCodes.get(i);
             Operand leftVal = intermediateCode.getLeftVal();
+
             if (leftVal != null && (leftVal.isTemp() || leftVal.isLocal() || leftVal.isGlobal())) {
-                if (operand.equals(leftVal)) {
+                if (operand.equals(leftVal) && pos != i) {
                     return Integer.MAX_VALUE;
                 }
             }
             Pair<Operand, Operand> rightVals = intermediateCode.getRightVal();
             if (rightVals != null) {
                 Operand operand1 = rightVals.getFirst();
-                if (operand1 != null && (operand1.isTemp() || operand1.isLocal() || operand1.isGlobal())) {
+                if (operand1 != null &&
+                    (operand1.isTemp() || operand1.isLocal() || operand1.isGlobal())) {
                     if (operand.equals(operand1)) {
                         return i - pos;
                     }

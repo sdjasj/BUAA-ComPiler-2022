@@ -13,6 +13,38 @@ public class MipsCode {
         this.source2 = source2;
     }
 
+    public String getCodeName() {
+        return codeName;
+    }
+
+    public String getTarget() {
+        return target;
+    }
+
+    public void setTarget(String target) {
+        this.target = target;
+    }
+
+    public String getSource1() {
+        return source1;
+    }
+
+    public void setSource1(String source1) {
+        this.source1 = source1;
+    }
+
+    public String getSource2() {
+        return source2;
+    }
+
+    public void setSource2(String source2) {
+        this.source2 = source2;
+    }
+
+    public void setCodeName(String codeName) {
+        this.codeName = codeName;
+    }
+
     public static MipsCode generateLW(String target, String source1, String source2) {
         MipsCode mipsCode = new MipsCode("lw", target, source1, source2);
         return mipsCode;
@@ -78,12 +110,7 @@ public class MipsCode {
         return mipsCode;
     }
 
-    public static MipsCode generateDIV(String target, String source1, String source2) {
-        MipsCode mipsCode = new MipsCode("div", target, source1, source2);
-        return mipsCode;
-    }
-
-    public static MipsCode generateDIVMOD(String source1, String source2) {
+    public static MipsCode generateDIV(String source1, String source2) {
         MipsCode mipsCode = new MipsCode("div", null, source1, source2);
         return mipsCode;
     }

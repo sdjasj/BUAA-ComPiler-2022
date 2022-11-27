@@ -55,6 +55,8 @@ public class MipsVisitor {
         //代码区
         System.out.println(".text");
 
+        MipsOptimizer.optimizeCalculate(mipsCodes);
+
         for (MipsCode mipsCode : mipsCodes) {
             mipsCode.output();
         }

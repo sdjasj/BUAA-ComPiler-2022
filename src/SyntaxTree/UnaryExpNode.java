@@ -94,6 +94,7 @@ public class UnaryExpNode extends ParserNode implements Serializable {
 
     public Operand generateMidCodeAndReturnTempVar(IntermediateVisitor intermediateVisitor) {
         if (isFuncCall()) {
+            intermediateVisitor.setCallFunction();
             if (funcRParamsNode != null) {
                 ArrayList<Operand> varTs =
                     funcRParamsNode.generateMidCodeAndReturnTempVar(intermediateVisitor);
