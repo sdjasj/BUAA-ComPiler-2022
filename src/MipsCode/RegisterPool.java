@@ -18,6 +18,7 @@ public class RegisterPool {
     private HashSet<String> freezeRegs;
     public static ArrayList<String> tempRegs = new ArrayList<String>() {
         {
+            add("$ra");
             add("$a0");
             add("$a1");
             add("$a2");
@@ -31,7 +32,6 @@ public class RegisterPool {
             add("$t6");
             add("$t7");
             add("$t8");
-            add("$t9");
         }
     };
 
@@ -57,6 +57,10 @@ public class RegisterPool {
 
     public Operand getVarNameOfTempReg(String reg) {
         return tempRegToVarMap.get(reg);
+    }
+
+    public boolean containVarInReg(Operand var) {
+        return varToTempRegMap.containsKey(var);
     }
 
     public String getLongestNotUsedTempReg() {
@@ -106,9 +110,10 @@ public class RegisterPool {
 //        }
 //        System.err.println("inter " + intermediateCode.getTarget());
 //        System.err.println(ansVar);
-//        System.err.println(maxv);
+//        System.err.println(maxv)
+        if (ansVar != null && maxv != Integer.MAX_VALUE &&
+            (!ansVar.isGlobal() || (ansVar.isTemp() && ansVar.isAddress()))) {
 
-        if (ansVar != null && maxv != Integer.MAX_VALUE) {
             ansVar.storeToMemory(mipsVisitor, varAddressOffset, ans);
         }
         return ans;
@@ -162,6 +167,8 @@ public class RegisterPool {
                                        boolean load) {
         if (varToTempRegMap.containsKey(varName)) {
             String reg = varToTempRegMap.get(varName);
+//            System.err.println(varName);
+//            System.err.println(reg);
             return reg;
         }
 
@@ -173,18 +180,37 @@ public class RegisterPool {
                 if (load) {
                     varName.loadToReg(mipsVisitor, varAddressOffset, tempReg);
                 }
+
+                if (varName.isGlobal()) {
+                    mipsVisitor.addMipsCode(MipsCode.generateADDIU(tempReg, "$gp",
+                        String.valueOf(mipsVisitor.getOffsetByVar(varName.getName(), 0))));
+                    return tempReg;
+                }
+
+                if (!varName.isTemp()) {
+                    if (varName.isAddress() && !varAddressOffset.isParam(varName)) {
+                        mipsVisitor.addMipsCode(MipsCode.generateADDIU(tempReg, "$sp",
+                            String.valueOf(varAddressOffset.getArrayOffset(varName, 0))));
+                    } else if (varName.isAddress() && varAddressOffset.isParam(varName)) {
+                        mipsVisitor.addMipsCode(MipsCode.generateLW(tempReg,
+                            String.valueOf(varAddressOffset.getArrayOffset(varName, 0)), "$sp"));
+                    }
+
+                    return tempReg;
+                }
+
                 return tempReg;
             }
         }
 
         String tempReg = getOptTempReg(intermediateCode, mipsVisitor, varAddressOffset);
-
         if (tempRegToVarMap.containsKey(tempReg)) {
             Operand tempVarName = tempRegToVarMap.get(tempReg);
             varToTempRegMap.remove(tempVarName);
         }
         varToTempRegMap.put(varName, tempReg);
         tempRegToVarMap.put(tempReg, varName);
+//        System.err.println(varName + " " + tempReg + " " + tempRegToVarMap);
 
 //        if (varName.getName().equals("t@26")) {
 //            System.err.println(varName + " " +varToTempRegMap);
@@ -198,6 +224,23 @@ public class RegisterPool {
             varName.loadToReg(mipsVisitor, varAddressOffset, tempReg);
         }
 
+        if (varName.isGlobal()) {
+            mipsVisitor.addMipsCode(MipsCode.generateADDIU(tempReg, "$gp",
+                String.valueOf(mipsVisitor.getOffsetByVar(varName.getName(), 0))));
+            return tempReg;
+        }
+
+        if (!varName.isTemp()) {
+            if (varName.isAddress() && !varAddressOffset.isParam(varName)) {
+                mipsVisitor.addMipsCode(MipsCode.generateADDIU(tempReg, "$sp",
+                    String.valueOf(varAddressOffset.getArrayOffset(varName, 0))));
+            } else if (varName.isAddress() && varAddressOffset.isParam(varName)) {
+                mipsVisitor.addMipsCode(MipsCode.generateLW(tempReg,
+                    String.valueOf(varAddressOffset.getArrayOffset(varName, 0)), "$sp"));
+            }
+
+            return tempReg;
+        }
         return tempReg;
     }
 

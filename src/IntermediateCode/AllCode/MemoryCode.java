@@ -29,7 +29,7 @@ public class MemoryCode extends IntermediateCode {
     @Override
     public Pair<Operand, Operand> getRightVal() {
         if (op == Operator.LOAD) {
-            return new Pair<Operand, Operand>(source2, null);
+            return new Pair<Operand, Operand>(source1, source2);
         } else {
             return new Pair<Operand, Operand>(target, source2);
         }
@@ -47,6 +47,8 @@ public class MemoryCode extends IntermediateCode {
         return usedSet;
     }
 
+
+
     @Override
     public void toMips(MipsVisitor mipsVisitor, VarAddressOffset varAddressOffset,
                        RegisterPool registerPool) {
@@ -61,7 +63,12 @@ public class MemoryCode extends IntermediateCode {
 
         String targetReg;
 
-        String source2Reg = getSrcReg(source2, varAddressOffset, mipsVisitor, registerPool);
+        String source2Reg = null;
+        if (source2.isNUMBER()) {
+            source2Reg = source2.getName();
+        } else {
+            source2Reg = getSrcReg(source2, varAddressOffset, mipsVisitor, registerPool);
+        }
 //        if (source2.isNUMBER()) {
 //            source2Reg = registerPool.getTempReg(true, varAddressOffset, mipsVisitor);
 //            mipsVisitor.addMipsCode(
@@ -79,14 +86,36 @@ public class MemoryCode extends IntermediateCode {
         if (source1.isGlobal()) {
             //操作的内存名称为全局变量
             if (op == Operator.LOAD) {
-                targetReg = registerPool.allocateRegToVarNotLoad(target, varAddressOffset, mipsVisitor, this);
+                targetReg =
+                    registerPool.allocateRegToVarNotLoad(target, varAddressOffset, mipsVisitor,
+                        this);
             } else {
                 targetReg = getSrcReg(target, varAddressOffset, mipsVisitor, registerPool);
             }
             if (op == Operator.LOAD) {
-                mipsVisitor.addMipsCode(MipsCode.generateLW(targetReg, source1.getName(), source2Reg));
+                if (source2.isNUMBER()) {
+                    mipsVisitor.addMipsCode(
+                        MipsCode.generateLW(targetReg, String.valueOf(
+                            mipsVisitor.getOffsetByVar(source1.getName(),
+                                Integer.parseInt(source2Reg))), "$gp"));
+                } else {
+                    mipsVisitor.addMipsCode(MipsCode.generateADDU("$1", "$gp", source2Reg));
+                    mipsVisitor.addMipsCode(
+                        MipsCode.generateLW(targetReg, String.valueOf(mipsVisitor.getOffsetByVar(source1.getName(), 0)), "$1"));
+                }
             } else if (op == Operator.STORE) {
-                mipsVisitor.addMipsCode(MipsCode.generateSW(targetReg, source1.getName(), source2Reg));
+                if (source2.isNUMBER()) {
+                    mipsVisitor.addMipsCode(
+                        MipsCode.generateSW(targetReg, String.valueOf(
+                            mipsVisitor.getOffsetByVar(source1.getName(),
+                                Integer.parseInt(source2Reg))), "$gp"));
+                } else {
+                    mipsVisitor.addMipsCode(MipsCode.generateADDU("$1", "$gp", source2Reg));
+                    mipsVisitor.addMipsCode(
+                        MipsCode.generateSW(targetReg,
+                            String.valueOf(mipsVisitor.getOffsetByVar(source1.getName(), 0)),
+                            "$1"));
+                }
             }
 
             if (target.isNUMBER()) {
@@ -99,21 +128,29 @@ public class MemoryCode extends IntermediateCode {
             return;
         } else {
             //局部变量
-            String tempReg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor, this);
+            String arrayReg =
+                registerPool.allocateRegToVarNotLoad(source1, varAddressOffset, mipsVisitor, this);
+            String tempReg = null;
             if (varAddressOffset.isParam(source1)) {
                 //参数
-                mipsVisitor.addMipsCode(MipsCode.generateLW(tempReg,
-                    String.valueOf(varAddressOffset.getArrayOffset(source1, 0)), "$sp"));
-                mipsVisitor.addMipsCode(MipsCode.generateADDU(tempReg, source2Reg, tempReg));
-                registerPool.unFreeze(source2Reg);
-                source2Reg = tempReg;
+                if (source2.isNUMBER()) {
+
+                } else {
+                    tempReg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor, this);
+                    mipsVisitor.addMipsCode(MipsCode.generateADDU(tempReg, source2Reg, arrayReg));
+                    registerPool.unFreeze(source2Reg);
+                    source2Reg = tempReg;
+                }
             } else {
                 //普通局部变量
-                mipsVisitor.addMipsCode(MipsCode.generateADDIU(tempReg, "$sp",
-                    String.valueOf(varAddressOffset.getArrayOffset(source1, 0))));
-                mipsVisitor.addMipsCode(MipsCode.generateADDU(tempReg, source2Reg, tempReg));
-                registerPool.unFreeze(source2Reg);
-                source2Reg = tempReg;
+                if (source2.isNUMBER()) {
+
+                } else {
+                    tempReg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor, this);
+                    mipsVisitor.addMipsCode(MipsCode.generateADDU(tempReg, source2Reg, arrayReg));
+                    registerPool.unFreeze(source2Reg);
+                    source2Reg = tempReg;
+                }
             }
 
 
@@ -125,9 +162,18 @@ public class MemoryCode extends IntermediateCode {
             }
 
             if (op == Operator.LOAD) {
-                mipsVisitor.addMipsCode(MipsCode.generateLW(targetReg, "0", source2Reg));
+                if (source2.isNUMBER()) {
+                    mipsVisitor.addMipsCode(MipsCode.generateLW(targetReg, source2Reg, arrayReg));
+                } else {
+                    mipsVisitor.addMipsCode(MipsCode.generateLW(targetReg, "0", source2Reg));
+                }
             } else {
-                mipsVisitor.addMipsCode(MipsCode.generateSW(targetReg, "0", source2Reg));
+                if (source2.isNUMBER()) {
+                    mipsVisitor.addMipsCode(MipsCode.generateSW(targetReg, source2Reg, arrayReg));
+                } else {
+                    mipsVisitor.addMipsCode(MipsCode.generateSW(targetReg, "0", source2Reg));
+                }
+
             }
         }
 
@@ -146,5 +192,15 @@ public class MemoryCode extends IntermediateCode {
             System.out.println(
                 Operator.STORE + " " + target + " TO " + source1 + " OFFSET " + source2);
         }
+    }
+
+    @Override
+    public String toString() {
+        if (op == Operator.LOAD) {
+            return Operator.LOAD + " " + target + " FROM " + source1 + " OFFSET " + source2;
+        } else if (op == Operator.STORE) {
+            return Operator.STORE + " " + target + " TO " + source1 + " OFFSET " + source2;
+        }
+        return null;
     }
 }

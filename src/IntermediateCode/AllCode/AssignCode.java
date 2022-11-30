@@ -22,8 +22,8 @@ public class AssignCode extends IntermediateCode {
 
         String src1Reg = getSrcReg(source1, varAddressOffset, mipsVisitor, registerPool);
         if (target.isGlobal()) {
-            mipsVisitor.addMipsCode(MipsCode.generateLA(target.getName(), "$1"));
-            MipsCode storeCode = MipsCode.generateSW(src1Reg, "0", "$1");
+            int offset = mipsVisitor.getOffsetByVar(target.getName(), 0);
+            MipsCode storeCode = MipsCode.generateSW(src1Reg, String.valueOf(offset), "$gp");
             mipsVisitor.addMipsCode(storeCode);
         } else {
             String targetReg =

@@ -16,7 +16,7 @@ import java.util.List;
 public class FunctionReturnCode extends IntermediateCode {
 
     public FunctionReturnCode(Operand target) {
-        super(target, null, null, Operator.RETURN);
+        super(null, target, null, Operator.RETURN);
     }
 
     public FunctionReturnCode() {
@@ -30,7 +30,7 @@ public class FunctionReturnCode extends IntermediateCode {
 
     @Override
     public Pair<Operand, Operand> getRightVal() {
-        return new Pair<Operand, Operand>(target, null);
+        return new Pair<Operand, Operand>(source1, null);
     }
 
     @Override
@@ -46,7 +46,7 @@ public class FunctionReturnCode extends IntermediateCode {
     public void toMips(MipsVisitor mipsVisitor, VarAddressOffset varAddressOffset,
                        RegisterPool registerPool) {
 
-        if (target == null) {
+        if (source1 == null) {
             ArrayList<String> usedGlobalRegs = new ArrayList<>(conflictGraph.getUsedGlobalRegs());
             for (String usedGlobalReg : usedGlobalRegs) {
                 MipsCode storeUsedGlobalRegs = MipsCode.generateLW(usedGlobalReg,
@@ -54,11 +54,9 @@ public class FunctionReturnCode extends IntermediateCode {
                 mipsVisitor.addMipsCode(storeUsedGlobalRegs);
             }
 
-            if (basicBlock.getFunction().isCallOtherFunc()) {
-                mipsVisitor.addMipsCode(
-                    MipsCode.generateLW("$ra", String.valueOf(varAddressOffset.getRegOffset("$ra")),
-                        "$sp"));
-            }
+            mipsVisitor.addMipsCode(
+                MipsCode.generateLW("$ra", String.valueOf(varAddressOffset.getRegOffset("$ra")),
+                    "$sp"));
 
             //reset sp
             int offset = varAddressOffset.getCurOffset();
@@ -69,10 +67,10 @@ public class FunctionReturnCode extends IntermediateCode {
             return;
         }
 
-        if (target.isNUMBER()) {
-            mipsVisitor.addMipsCode(MipsCode.generateLi("$v0", target.getName()));
+        if (source1.isNUMBER()) {
+            mipsVisitor.addMipsCode(MipsCode.generateLi("$v0", source1.getName()));
         } else {
-            String targetReg = getSrcReg(target, varAddressOffset, mipsVisitor, registerPool);
+            String targetReg = getSrcReg(source1, varAddressOffset, mipsVisitor, registerPool);
             mipsVisitor.addMipsCode(MipsCode.generateMOVE("$v0", targetReg));
             registerPool.unFreeze(targetReg);
         }
@@ -84,11 +82,9 @@ public class FunctionReturnCode extends IntermediateCode {
             mipsVisitor.addMipsCode(storeUsedGlobalRegs);
         }
 
-        if (basicBlock.getFunction().isCallOtherFunc()) {
-            mipsVisitor.addMipsCode(
-                MipsCode.generateLW("$ra", String.valueOf(varAddressOffset.getRegOffset("$ra")),
-                    "$sp"));
-        }
+        mipsVisitor.addMipsCode(
+            MipsCode.generateLW("$ra", String.valueOf(varAddressOffset.getRegOffset("$ra")),
+                "$sp"));
 
         //reset sp
         int offset = varAddressOffset.getCurOffset();
@@ -100,11 +96,11 @@ public class FunctionReturnCode extends IntermediateCode {
 
     @Override
     public void output() {
-        if (target == null) {
+        if (source1 == null) {
             //void
             System.out.println(op);
         } else {
-            System.out.println(op + " " + target);
+            System.out.println(op + " " + source1);
         }
     }
 }

@@ -97,7 +97,13 @@ public class Operand {
     public void storeToMemory(MipsVisitor mipsVisitor, VarAddressOffset varAddressOffset, String reg) {
         mipsVisitor.addMipsCode(MipsCode.generateComment("store " + name));
         if (isGlobal()) {
-            mipsVisitor.addMipsCode(MipsCode.generateSW(reg, name, "$0"));
+            if (isVar()) {
+                mipsVisitor.addMipsCode(
+                    MipsCode.generateSW(reg, String.valueOf(mipsVisitor.getOffsetByVar(name, 0)),
+                        "$gp"));
+            } else {
+                System.err.println("error in store global reg");
+            }
         } else if (isLocal() || isTemp()) {
             mipsVisitor.addMipsCode(
                 MipsCode.generateSW(reg, String.valueOf(varAddressOffset.getVarOffset(this)),

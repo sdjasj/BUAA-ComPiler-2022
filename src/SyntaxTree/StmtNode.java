@@ -177,29 +177,57 @@ public class StmtNode extends ParserNode {
                 intermediateVisitor.addIntermediateCode(assignCode);
             }
         } else if (stmtType == PRINTF) {
-            String[] outputStrings =
-                formatString.getValue().substring(1, formatString.getValue().length() - 1)
-                    .split("((?<=%d)|(?=%d)|(?<=\\\\n))|(?=\\\\n)");
-            int idx = 0;
-            ArrayList<Operand> expOutputList = new ArrayList<>();
-            for (ExpNode node : formatStringExp) {
-                expOutputList.add(node.generateMidCodeAndReturnTempVar(intermediateVisitor));
-            }
-            for (String outputString : outputStrings) {
-                if (outputString.equals("%d")) {
-                    Operand target = expOutputList.get(idx);
-                    idx++;
-                    OutputCode outputCode = new OutputCode(target, true);
-                    intermediateVisitor.addIntermediateCode(outputCode);
-                } else {
-                    String name = TCode.genNewStr();
-                    GlobalStrDecl globalStrDecl =
-                        new GlobalStrDecl(GlobalDecl.StoreType.str_, name, true,
-                            outputString);
-                    intermediateVisitor.addGlobalDecl(globalStrDecl);
-                    OutputCode outputCode =
-                        new OutputCode(Operand.getNewOperand(name, Operand.OperandType.ADDRESS), false);
-                    intermediateVisitor.addIntermediateCode(outputCode);
+            if (Optimizer.OutputOptimizer) {
+                if (formatString.getValue().equals("")) {
+                    return;
+                }
+                String[] outputStrings =
+                    formatString.getValue().substring(1, formatString.getValue().length() - 1)
+                        .split("((?<=%d)|(?=%d)|(?<=\\\\n))|(?=\\\\n)");
+                int idx = 0;
+                for (String outputString : outputStrings) {
+                    if (outputString.equals("%d")) {
+                        Operand target = formatStringExp.get(idx)
+                            .generateMidCodeAndReturnTempVar(intermediateVisitor);
+                        idx++;
+                        OutputCode outputCode = new OutputCode(target, true);
+                        intermediateVisitor.addIntermediateCode(outputCode);
+                    } else {
+                        String name = TCode.genNewStr();
+                        GlobalStrDecl globalStrDecl =
+                            new GlobalStrDecl(GlobalDecl.StoreType.str_, name, true,
+                                outputString);
+                        intermediateVisitor.addGlobalDecl(globalStrDecl);
+                        OutputCode outputCode =
+                            new OutputCode(Operand.getNewOperand(name, Operand.OperandType.ADDRESS), false);
+                        intermediateVisitor.addIntermediateCode(outputCode);
+                    }
+                }
+            } else {
+                String[] outputStrings =
+                    formatString.getValue().substring(1, formatString.getValue().length() - 1)
+                        .split("((?<=%d)|(?=%d)|(?<=\\\\n))|(?=\\\\n)");
+                int idx = 0;
+                ArrayList<Operand> expOutputList = new ArrayList<>();
+                for (ExpNode node : formatStringExp) {
+                    expOutputList.add(node.generateMidCodeAndReturnTempVar(intermediateVisitor));
+                }
+                for (String outputString : outputStrings) {
+                    if (outputString.equals("%d")) {
+                        Operand target = expOutputList.get(idx);
+                        idx++;
+                        OutputCode outputCode = new OutputCode(target, true);
+                        intermediateVisitor.addIntermediateCode(outputCode);
+                    } else {
+                        String name = TCode.genNewStr();
+                        GlobalStrDecl globalStrDecl =
+                            new GlobalStrDecl(GlobalDecl.StoreType.str_, name, true,
+                                outputString);
+                        intermediateVisitor.addGlobalDecl(globalStrDecl);
+                        OutputCode outputCode =
+                            new OutputCode(Operand.getNewOperand(name, Operand.OperandType.ADDRESS), false);
+                        intermediateVisitor.addIntermediateCode(outputCode);
+                    }
                 }
             }
         } else if (stmtType == IF) {

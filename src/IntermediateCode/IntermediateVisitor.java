@@ -88,6 +88,9 @@ public class IntermediateVisitor {
                     ((GlobalStrDecl) globalDecl).toMips());
             }
         }
+
+        mipsVisitor.generateGlobal();
+
         //添加代码
         for (Function function : functions) {
             function.toMips(mipsVisitor);

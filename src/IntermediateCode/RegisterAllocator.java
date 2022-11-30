@@ -20,11 +20,10 @@ public class RegisterAllocator {
             add("$s6");
             add("$s7");
             add("$fp");
-            add("$gp");
             add("$k0");
             add("$k1");
-            add("$ra");
             add("$v1");
+            add("$t9");
         }
     };
 

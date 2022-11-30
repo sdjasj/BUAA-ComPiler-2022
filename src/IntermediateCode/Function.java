@@ -102,12 +102,41 @@ public class Function {
 
     public void buildBasicBlocks() {
         flowGraph.buildBasicBlocks(intermediateCodes, this);
+        ArrayList<BasicBlock> basicBlocks = flowGraph.getBasicBlocks();
+        for (BasicBlock basicBlock : basicBlocks) {
+            connecteBlocks(basicBlock, new HashSet<>());
+        }
+    }
+
+    public HashSet<BasicBlock> connecteBlocks(BasicBlock beginBlock, HashSet<BasicBlock> visited) {
+        HashSet<BasicBlock> basicBlocks = beginBlock.getSuccessor();
+        HashSet<BasicBlock> ans = new HashSet<>();
+        for (BasicBlock basicBlock : basicBlocks) {
+            if (!visited.contains(basicBlock)) {
+                visited.add(basicBlock);
+                HashSet<BasicBlock> temp = connecteBlocks(basicBlock, visited);
+                beginBlock.addAdjBlocks(temp);
+                ans.addAll(temp);
+            }
+        }
+        ans.add(beginBlock);
+        return ans;
     }
 
     public void basicBlockOptimize() {
-        BlockOptimizer.activeVarAnalyze(flowGraph);
-        BlockOptimizer.deleteDeadCode(flowGraph);
-        BlockOptimizer.peepholes(flowGraph);
+        boolean flag1 = true;
+        boolean flag2 = true;
+//        System.err.println(name);
+        while (flag1 || flag2) {
+            BlockOptimizer.peepholes(flowGraph);
+            BlockOptimizer.reachDefineAnalyze(flowGraph);
+            flag1 = BlockOptimizer.ReplicaPropagation(flowGraph);
+            BlockOptimizer.peepHolesForReWrite(flowGraph);
+            BlockOptimizer.activeVarAnalyze(flowGraph);
+            flag2 = BlockOptimizer.deleteDeadCode(flowGraph);
+//            System.err.println(flag1 + "1");
+//            System.err.println(flag2 + "2");
+        }
     }
 
     public void colorAllocate() {
@@ -132,9 +161,7 @@ public class Function {
                 //函数参数
                 getParamOffset(varAddressOffset);
                 //ra
-                if (isCallOtherFunc()) {
-                    varAddressOffset.addReg("$ra");
-                }
+                varAddressOffset.addReg("$ra");
                 //全局寄存器
                 varAddressOffset.addGlobalRegsAddress(conflictGraph);
 //                varAddressOffset.addAllRegs(registerPool);
@@ -148,12 +175,10 @@ public class Function {
                 MipsCode mipsCode = MipsCode.generateADDIU("$sp", "$sp", String.valueOf(-offset));
                 mipsVisitor.addMipsCode(mipsCode);
 
-                if (isCallOtherFunc()) {
-                    MipsCode raStored =
-                        MipsCode.generateSW("$ra", String.valueOf(varAddressOffset.getRegOffset("$ra")),
-                            "$sp");
-                    mipsVisitor.addMipsCode(raStored);
-                }
+                MipsCode raStored =
+                    MipsCode.generateSW("$ra", String.valueOf(varAddressOffset.getRegOffset("$ra")),
+                        "$sp");
+                mipsVisitor.addMipsCode(raStored);
 
                 //现在全局寄存器全存
                 if (!isMain) {

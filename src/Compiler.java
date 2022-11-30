@@ -35,12 +35,6 @@ public class Compiler {
 //        }
 //        PrintStream ps = new PrintStream("output.txt");
 //        System.setOut(ps);
-        File file = new File("mips.txt");
-        if (!file.exists()) {
-            file.createNewFile();
-        }
-        PrintStream ps = new PrintStream("mips.txt");
-        System.setOut(ps);
         SymbolTable symbolTable = new SymbolTable();
         Parser parser = new Parser(tokens);
         parser.setOutputParser(false);
@@ -49,10 +43,25 @@ public class Compiler {
         IntermediateVisitor intermediateVisitor = new IntermediateVisitor();
         compUnitNode.generateIntermediate(intermediateVisitor);
         intermediateVisitor.optimize();
-//        intermediateVisitor.output();
+
+        File file = new File("output.txt");
+        if (!file.exists()) {
+            file.createNewFile();
+        }
+        PrintStream ps = new PrintStream("output.txt");
+        System.setOut(ps);
+
+        intermediateVisitor.output();
 //        intermediateVisitor.testPrint();
+
         MipsVisitor mipsVisitor = new MipsVisitor();
         intermediateVisitor.IntermediateToMips(mipsVisitor);
+        file = new File("mips.txt");
+        if (!file.exists()) {
+            file.createNewFile();
+        }
+        ps = new PrintStream("mips.txt");
+        System.setOut(ps);
         mipsVisitor.output();
         ps.close();
     }

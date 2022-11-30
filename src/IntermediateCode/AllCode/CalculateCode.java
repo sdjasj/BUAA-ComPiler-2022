@@ -18,6 +18,80 @@ public class CalculateCode extends IntermediateCode {
         super(target, source1, source2, op);
     }
 
+    public Operand getValue() {
+        if (source1.isNUMBER() && source2.isNUMBER()) {
+            switch (op) {
+                case ADD:
+                    return Operand.getNewOperand(String.valueOf(
+                            Integer.parseInt(source1.getName()) + Integer.parseInt(source2.getName())),
+                        Operand.OperandType.NUMBER);
+                case SUB:
+                    return Operand.getNewOperand(String.valueOf(
+                            Integer.parseInt(source1.getName()) - Integer.parseInt(source2.getName())),
+                        Operand.OperandType.NUMBER);
+                case MUL:
+                    return Operand.getNewOperand(String.valueOf(
+                            Integer.parseInt(source1.getName()) * Integer.parseInt(source2.getName())),
+                        Operand.OperandType.NUMBER);
+                case DIV:
+                    return Operand.getNewOperand(String.valueOf(
+                            Integer.parseInt(source1.getName()) / Integer.parseInt(source2.getName())),
+                        Operand.OperandType.NUMBER);
+                case MOD:
+                    return Operand.getNewOperand(String.valueOf(
+                            Integer.parseInt(source1.getName()) % Integer.parseInt(source2.getName())),
+                        Operand.OperandType.NUMBER);
+            }
+
+        } else if (source1.isNUMBER()) {
+            switch (op) {
+                case MUL:
+                    if (source1.getName().equals("0")) {
+                        return Operand.getNewOperand("0", Operand.OperandType.NUMBER);
+                    } else if (source1.getName().equals("1")) {
+                        return source2;
+                    }
+                    return null;
+                case DIV:
+                case MOD:
+                    if (source1.getName().equals("0")) {
+                        return Operand.getNewOperand("0", Operand.OperandType.NUMBER);
+                    }
+                    return null;
+                case ADD:
+                    if (source1.getName().equals("0")) {
+                        return source2;
+                    }
+                    return null;
+                default:
+                    return null;
+            }
+        } else if (source2.isNUMBER()) {
+            switch (op) {
+                case MUL:
+                    if (source2.getName().equals("0")) {
+                        return Operand.getNewOperand("0", Operand.OperandType.NUMBER);
+                    } else if (source2.getName().equals("1")) {
+                        return source1;
+                    }
+                    return null;
+                case ADD:
+                case SUB:
+                    if (source2.getName().equals("0")) {
+                        return source1;
+                    }
+                    return null;
+                case DIV:
+                    if (source2.getName().equals("1")) {
+                        return source1;
+                    }
+                default:
+                    return null;
+            }
+        }
+        return null;
+    }
+
     @Override
     public void toMips(MipsVisitor mipsVisitor, VarAddressOffset varAddressOffset,
                        RegisterPool registerPool) {
@@ -25,12 +99,12 @@ public class CalculateCode extends IntermediateCode {
         mipsVisitor.addMipsCode(MipsCode.generateComment("calculate " + target));
         String source1Reg;
         String source2Reg;
-        //TODO: $0
 
         if (source1.isNUMBER()) {
             source1Reg = source1.getName();
         } else {
             source1Reg = getSrcReg(source1, varAddressOffset, mipsVisitor, registerPool);
+//            System.err.println(source1Reg);
         }
 
         if (source2.isNUMBER()) {
@@ -64,7 +138,7 @@ public class CalculateCode extends IntermediateCode {
                 mipsVisitor.addMipsCode(MipsCode.generateLi("$1", source1Reg));
                 mipsCode = MipsCode.generateSUBU(resReg, "$1", source2Reg);
             } else if (source2.isNUMBER()) {
-                mipsCode = MipsCode.generateSUBIU(resReg, source1Reg, source2Reg);
+                mipsCode = MipsCode.generateADDIU(resReg, source1Reg, String.valueOf(-Integer.parseInt(source2Reg)));
             } else {
                 mipsCode = MipsCode.generateSUBU(resReg, source1Reg, source2Reg);
             }
@@ -73,7 +147,7 @@ public class CalculateCode extends IntermediateCode {
             MipsCode mipsCode = null;
             if (source1.isNUMBER()) {
                 mipsVisitor.addMipsCode(MipsCode.generateLi("$1", source1Reg));
-                mipsCode = MipsCode.generateMUL(resReg, source2Reg, "$1");
+                mipsCode = MipsCode.generateMUL(resReg, "$1", source2Reg);
             } else if (source2.isNUMBER()) {
                 mipsVisitor.addMipsCode(MipsCode.generateLi("$1", source2Reg));
                 mipsCode = MipsCode.generateMUL(resReg, source1Reg, "$1");
@@ -85,7 +159,7 @@ public class CalculateCode extends IntermediateCode {
             MipsCode mipsCode = null;
             if (source1.isNUMBER()) {
                 mipsVisitor.addMipsCode(MipsCode.generateLi("$1", source1Reg));
-                mipsCode = MipsCode.generateDIV(source2Reg, "$1");
+                mipsCode = MipsCode.generateDIV("$1", source2Reg);
                 mipsVisitor.addMipsCode(mipsCode);
                 MipsCode mipsCode1 = MipsCode.generateMFLO(resReg);
                 mipsVisitor.addMipsCode(mipsCode1);
@@ -105,7 +179,7 @@ public class CalculateCode extends IntermediateCode {
             MipsCode mipsCode = null;
             if (source1.isNUMBER()) {
                 mipsVisitor.addMipsCode(MipsCode.generateLi("$1", source1Reg));
-                mipsCode = MipsCode.generateDIV(source2Reg, "$1");
+                mipsCode = MipsCode.generateDIV("$1", source2Reg);
                 mipsVisitor.addMipsCode(mipsCode);
                 MipsCode mipsCode1 = MipsCode.generateMFHI(resReg);
                 mipsVisitor.addMipsCode(mipsCode1);
@@ -126,7 +200,9 @@ public class CalculateCode extends IntermediateCode {
 
         //左值为全局变量
         if (target.isGlobal()) {
-            MipsCode mipsCode1 = MipsCode.generateSW(resReg, target.getName(), "$0");
+            MipsCode mipsCode1 =
+                MipsCode.generateSW(resReg, String.valueOf(mipsVisitor.getOffsetByVar(
+                    target.getName(), 0)), "$gp");
             mipsVisitor.addMipsCode(mipsCode1);
         }
         registerPool.unFreeze(source1Reg);

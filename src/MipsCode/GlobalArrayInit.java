@@ -13,6 +13,10 @@ public class GlobalArrayInit {
         this.initVals = initVals;
     }
 
+    public int getSize() {
+        return size;
+    }
+
     public void output() {
         StringBuilder init = new StringBuilder(name + ":   .word  ");
         if (initVals == null) {

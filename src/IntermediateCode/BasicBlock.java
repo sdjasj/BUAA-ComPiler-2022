@@ -1,11 +1,18 @@
 package IntermediateCode;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Set;
 
 import IntermediateCode.AllCode.AssignCode;
 import IntermediateCode.AllCode.CalculateCode;
+import IntermediateCode.AllCode.CompareCode;
+import IntermediateCode.AllCode.DeclCode;
 import IntermediateCode.AllCode.InputCode;
+import IntermediateCode.AllCode.MemoryCode;
+import IntermediateCode.AllCode.SingleCalculateCode;
+import IntermediateCode.FunctionCode.FunctionParam;
 import Tool.Pair;
 
 public class BasicBlock {
@@ -15,6 +22,8 @@ public class BasicBlock {
     private ArrayList<IntermediateCode> intermediateCodes;
     private HashSet<Operand> usedSet;
     private HashSet<Operand> defSet;
+    private HashMap<Operand, IntermediateCode> genSet = new HashMap<>();
+    private HashMap<Operand, HashSet<IntermediateCode>> killSet = new HashMap<>();
     private HashSet<Operand> activeInSet = new HashSet<>();
     private HashSet<Operand> activeOutSet = new HashSet<>();
     private HashSet<IntermediateCode> reachInSet = new HashSet<>();
@@ -22,6 +31,7 @@ public class BasicBlock {
     private boolean isBegin;
     private int id;
     private Function function;
+    private HashSet<BasicBlock> adjBlocks = new HashSet<>();
 
     public BasicBlock(int id, Function function) {
         this.intermediateCodes = new ArrayList<>();
@@ -64,6 +74,22 @@ public class BasicBlock {
         intermediateCode.setBasicBlock(this);
     }
 
+    public void addAdjBlocks(HashSet<BasicBlock> basicBlocks) {
+        adjBlocks.addAll(basicBlocks);
+    }
+
+    public HashSet<BasicBlock> getAdjBlocks() {
+        return adjBlocks;
+    }
+
+    public HashSet<BasicBlock> getSuccessor() {
+        return successor;
+    }
+
+    public HashSet<BasicBlock> getPrecursor() {
+        return precursor;
+    }
+
     public IntermediateCode getLastCode() {
         return intermediateCodes.get(intermediateCodes.size() - 1);
     }
@@ -80,8 +106,98 @@ public class BasicBlock {
         return tags.contains(tag);
     }
 
+    public HashSet<IntermediateCode> getReachInSet() {
+        return new HashSet<>(reachInSet);
+    }
+
+    public void setReachInSet(HashSet<IntermediateCode> reachInSet) {
+        this.reachInSet = reachInSet;
+    }
+
+    public HashSet<IntermediateCode> getReachOutSet() {
+        return new HashSet<>(reachOutSet);
+    }
+
+    public void setReachOutSet(HashSet<IntermediateCode> reachOutSet) {
+        this.reachOutSet = reachOutSet;
+    }
+
+    public void calReachInSet() {
+        for (BasicBlock basicBlock : precursor) {
+            reachInSet.addAll(basicBlock.reachOutSet);
+        }
+    }
+
+    public void calReachOutSet() {
+        HashSet<IntermediateCode> tempSet = new HashSet<>(reachInSet);
+        killSet.forEach((k, v) -> tempSet.removeAll(v));
+        HashSet<IntermediateCode> ans = new HashSet<>(genSet.values());
+        ans.addAll(tempSet);
+        reachOutSet = ans;
+    }
+
+    public void calGenSet() {
+        genSet.clear();
+        for (int i = 0; i < intermediateCodes.size(); i++) {
+            IntermediateCode intermediateCode = intermediateCodes.get(i);
+            if (intermediateCode instanceof CalculateCode ||
+                intermediateCode instanceof AssignCode ||
+                intermediateCode instanceof SingleCalculateCode ||
+                intermediateCode instanceof FunctionParam ||
+                intermediateCode instanceof InputCode ||
+                intermediateCode instanceof CompareCode ||
+                intermediateCode instanceof DeclCode ||
+                intermediateCode instanceof MemoryCode) {
+                if (!intermediateCode.target.isGlobal()) {
+                    genSet.put(intermediateCode.target, intermediateCode);
+                }
+            }
+        }
+    }
+
+    public HashMap<Operand, IntermediateCode> getGenSet() {
+        return new HashMap<>(genSet);
+    }
+
+    public HashSet<Operand> getGenDefVarSet() {
+        return new HashSet<>(genSet.keySet());
+    }
+
+    public HashMap<Operand, HashSet<IntermediateCode>> getKillSet() {
+        return new HashMap<>(killSet);
+    }
+
+    public void setKillSet(
+        HashMap<Operand, HashSet<IntermediateCode>> killSet) {
+        this.killSet = killSet;
+    }
+
+    public HashMap<Operand, HashSet<IntermediateCode>> getAllDefSet() {
+        HashMap<Operand, HashSet<IntermediateCode>> ans = new HashMap<>();
+        for (int i = 0; i < intermediateCodes.size(); i++) {
+            IntermediateCode intermediateCode = intermediateCodes.get(i);
+            if (intermediateCode instanceof CalculateCode ||
+                intermediateCode instanceof AssignCode ||
+                intermediateCode instanceof SingleCalculateCode ||
+                intermediateCode instanceof FunctionParam) {
+                if (!intermediateCode.target.isGlobal()) {
+                    if (ans.containsKey(intermediateCode.target)) {
+                        ans.get(intermediateCode.target).add(intermediateCode);
+                    } else {
+                        HashSet<IntermediateCode> t = new HashSet<>();
+                        t.add(intermediateCode);
+                        ans.put(intermediateCode.target, t);
+                    }
+                }
+            }
+        }
+        return ans;
+    }
+
     public void calUsedDefSet() {
         //什么是in和out
+        usedSet.clear();
+        defSet.clear();
         HashSet<Operand> seenVarSet = new HashSet<>();
         for (IntermediateCode intermediateCode : intermediateCodes) {
             Operand leftVal = intermediateCode.getLeftVal();
@@ -97,7 +213,7 @@ public class BasicBlock {
     }
 
     public void addUsedSet(HashSet<Operand> seenVarSet, Operand rightVal) {
-        if (rightVal != null && rightVal.isLocal()) {
+        if (rightVal != null && rightVal.isVar() && !rightVal.isGlobal()) {
             if (!rightVal.getName().equals("RET") && !seenVarSet.contains(rightVal)) {
                 seenVarSet.add(rightVal);
                 usedSet.add(rightVal);
@@ -106,7 +222,7 @@ public class BasicBlock {
     }
 
     public void addDefSet(HashSet<Operand> seenVarSet, Operand leftVal) {
-        if (leftVal != null && leftVal.isLocal()) {
+        if (leftVal != null && leftVal.isVar() && !leftVal.isGlobal()) {
             if (!leftVal.getName().equals("RET") && !seenVarSet.contains(leftVal)) {
                 seenVarSet.add(leftVal);
                 defSet.add(leftVal);
@@ -144,13 +260,21 @@ public class BasicBlock {
         return ans;
     }
 
+    public HashSet<Integer> getPrecursorIds() {
+        HashSet<Integer> ans = new HashSet<>();
+        for (BasicBlock basicBlock : precursor) {
+            ans.add(basicBlock.id);
+        }
+        return ans;
+    }
+
     public int findUsedVarNextCode(IntermediateCode curCode, Operand operand) {
         int pos = intermediateCodes.indexOf(curCode);
         for (int i = pos; i < intermediateCodes.size(); i++) {
             IntermediateCode intermediateCode = intermediateCodes.get(i);
             Operand leftVal = intermediateCode.getLeftVal();
 
-            if (leftVal != null && (leftVal.isTemp() || leftVal.isLocal() || leftVal.isGlobal())) {
+            if (leftVal != null) {
                 if (operand.equals(leftVal) && pos != i) {
                     return Integer.MAX_VALUE;
                 }
@@ -158,15 +282,21 @@ public class BasicBlock {
             Pair<Operand, Operand> rightVals = intermediateCode.getRightVal();
             if (rightVals != null) {
                 Operand operand1 = rightVals.getFirst();
-                if (operand1 != null &&
-                    (operand1.isTemp() || operand1.isLocal() || operand1.isGlobal())) {
+                if (operand1 != null) {
                     if (operand.equals(operand1)) {
                         return i - pos;
                     }
                 }
                 Operand operand2 = rightVals.getSecond();
-                if (operand2 != null && (operand2.isTemp() || operand2.isLocal() || operand2.isGlobal())) {
+                if (operand2 != null) {
                     if (operand.equals(operand2)) {
+                        return i - pos;
+                    }
+                }
+                if (intermediateCode instanceof MemoryCode &&
+                    intermediateCode.op == Operator.STORE) {
+                    Operand operand3 = intermediateCode.source1;
+                    if (operand.equals(operand3)) {
                         return i - pos;
                     }
                 }
@@ -184,17 +314,17 @@ public class BasicBlock {
         for (int i = intermediateCodes.size() - 1; i > pos; i--) {
             IntermediateCode intermediateCode = intermediateCodes.get(i);
             Operand leftVal = intermediateCode.getLeftVal();
-            if (leftVal != null && (leftVal.isTemp() || leftVal.isLocal() || leftVal.isGlobal())) {
+            if (leftVal != null && (leftVal.isTemp() || leftVal.isLocal())) {
                 usedTempVars.remove(leftVal);
             }
             Pair<Operand, Operand> rightVals = intermediateCode.getRightVal();
             if (rightVals != null) {
                 Operand operand1 = rightVals.getFirst();
-                if (operand1 != null && (operand1.isTemp() || operand1.isLocal() || operand1.isGlobal())) {
+                if (operand1 != null && (operand1.isTemp() || operand1.isLocal())) {
                     usedTempVars.add(operand1);
                 }
                 Operand operand2 = rightVals.getSecond();
-                if (operand2 != null && (operand2.isTemp() || operand2.isLocal() || operand2.isGlobal())) {
+                if (operand2 != null && (operand2.isTemp() || operand2.isLocal())) {
                     usedTempVars.add(operand2);
                 }
             }
@@ -290,6 +420,26 @@ public class BasicBlock {
             System.err.println(operand + " ");
         }
         System.err.println();
+//        System.err.print("pre: ");
+//        System.err.println(getPrecursorIds());
+//        System.err.print("in: ");
+//        for (IntermediateCode intermediateCode : reachInSet) {
+//            System.err.println(intermediateCode);
+//        }
+//        System.err.println();
+//        System.err.print("out: ");
+//        for (IntermediateCode intermediateCode : reachOutSet) {
+//            System.err.println(intermediateCode);
+//        }
+//        System.err.println();
+//        System.err.print("gen: ");
+//        System.err.println(genSet.values());
+//        System.err.println();
+//        System.err.print("kill: ");
+//        killSet.forEach((k, v) -> {
+//            System.err.println(k + ":  " + v);
+//        });
+//        System.err.println();
     }
 
     public void output() {

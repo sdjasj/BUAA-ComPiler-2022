@@ -107,11 +107,12 @@ public class IntermediateCode {
             //全局变量
             if (src.isVar()) {
                 reg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor, this);
-                mipsVisitor.addMipsCode(MipsCode.generateLA(src.getName(), "$1"));
-                mipsVisitor.addMipsCode(MipsCode.generateLW(reg, "0", "$1"));
+                mipsVisitor.addMipsCode(MipsCode.generateLW(reg,
+                    String.valueOf(mipsVisitor.getOffsetByVar(src.getName(), 0)), "$gp"));
             } else if (src.isAddress()) {
-                reg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor, this);
-                mipsVisitor.addMipsCode(MipsCode.generateLA(src.getName(), reg));
+//                reg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor, this);
+//                mipsVisitor.addMipsCode(MipsCode.generateLA(src.getName(), reg));
+                reg = registerPool.allocateRegToVarNotLoad(src, varAddressOffset, mipsVisitor, this);
             } else {
                 System.err.println("error in CalculateCode of source1 global");
             }
@@ -140,10 +141,12 @@ public class IntermediateCode {
 //                    reg = registerPool.allocateRegToVarLoad(src, varAddressOffset,
 //                        mipsVisitor);
 //                } else {
-                int arrayOffset = varAddressOffset.getVarOffset(src);
-                reg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor, this);
-                mipsVisitor.addMipsCode(
-                    MipsCode.generateADDIU(reg, "$sp", String.valueOf(arrayOffset)));
+//                int arrayOffset = varAddressOffset.getVarOffset(src);
+//                reg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor, this);
+//                mipsVisitor.addMipsCode(
+//                    MipsCode.generateADDIU(reg, "$sp", String.valueOf(arrayOffset)));
+                reg =
+                    registerPool.allocateRegToVarNotLoad(src, varAddressOffset, mipsVisitor, this);
             } else {
                 System.err.println("error in CalculateCode of source1 params");
             }

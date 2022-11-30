@@ -15,12 +15,30 @@ public class SingleCalculateCode extends IntermediateCode {
         super(target, source1, null, op);
     }
 
+    public Operand getValue() {
+        if (source1.isNUMBER()) {
+            switch (op) {
+                case PLUS:
+                    return Operand.getNewOperand(
+                        String.valueOf(Integer.parseInt(source1.getName())),
+                        Operand.OperandType.NUMBER);
+                case NEG:
+                    return Operand.getNewOperand(
+                        String.valueOf(-Integer.parseInt(source1.getName())),
+                        Operand.OperandType.NUMBER);
+                case NOT:
+                    return Operand.getNewOperand(
+                        String.valueOf(Integer.parseInt(source1.getName()) == 0 ? 1 : 0),
+                        Operand.OperandType.NUMBER);
+            }
+        }
+        return null;
+    }
+
     @Override
     public void toMips(MipsVisitor mipsVisitor, VarAddressOffset varAddressOffset,
                        RegisterPool registerPool) {
-        String targetReg =
-            registerPool.allocateRegToVarNotLoad(target, varAddressOffset,
-                mipsVisitor, this);
+
         String src1Reg = getSrcReg(source1, varAddressOffset, mipsVisitor, registerPool);
 //        if (source1.isNUMBER()) {
 //            src1Reg = registerPool.getTempReg(true, varAddressOffset, mipsVisitor);
@@ -32,12 +50,26 @@ public class SingleCalculateCode extends IntermediateCode {
 //            src1Reg =
 //                registerPool.allocateRegToVarLoad(source1.getName(), varAddressOffset, mipsVisitor);
 //        }
+
+        String targetReg = null;
+        if (target.isGlobal()) {
+            targetReg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor, this);
+        } else {
+            targetReg =
+                registerPool.allocateRegToVarNotLoad(target, varAddressOffset, mipsVisitor, this);
+        }
+
         if (op == Operator.PLUS) {
             mipsVisitor.addMipsCode(MipsCode.generateADDU(targetReg, "$0", src1Reg));
         } else if (op == Operator.NEG) {
             mipsVisitor.addMipsCode(MipsCode.generateSUBU(targetReg, "$0", src1Reg));
         } else if (op == Operator.NOT) {
             mipsVisitor.addMipsCode(new MipsCompareCode("seq", targetReg, src1Reg, "$0"));
+        }
+
+        if (target.isGlobal()) {
+            mipsVisitor.addMipsCode(MipsCode.generateSW(targetReg,
+                String.valueOf(mipsVisitor.getOffsetByVar(target.getName(), 0)), "$gp"));
         }
 
         registerPool.unFreeze(src1Reg);

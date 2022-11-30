@@ -98,6 +98,7 @@ public class UnaryExpNode extends ParserNode implements Serializable {
             if (funcRParamsNode != null) {
                 ArrayList<Operand> varTs =
                     funcRParamsNode.generateMidCodeAndReturnTempVar(intermediateVisitor);
+
 //                System.err.println(varTs);
                 for (int i = 0; i < varTs.size(); i++) {
                     FunctionPushCode functionPushCode = new FunctionPushCode(varTs.get(i), i);

@@ -35,7 +35,9 @@ public class InputCode extends IntermediateCode {
         mipsVisitor.addMipsCode(mipsCode);
         mipsVisitor.addMipsCode(MipsCode.generateSYSCALL());
         if (target.isGlobal()) {
-            mipsVisitor.addMipsCode(MipsCode.generateSW("$v0", target.getName(), "$0"));
+            mipsVisitor.addMipsCode(
+                MipsCode.generateSW("$v0", String.valueOf(mipsVisitor.getOffsetByVar(
+                    target.getName(), 0)), "$gp"));
         } else {
             String res =
                 registerPool.allocateRegToVarNotLoad(target, varAddressOffset, mipsVisitor, this);

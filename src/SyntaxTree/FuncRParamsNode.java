@@ -41,4 +41,8 @@ public class FuncRParamsNode extends ParserNode {
         }
         return varTs;
     }
+
+    public ArrayList<ExpNode> getExpNodes() {
+        return expNodes;
+    }
 }
