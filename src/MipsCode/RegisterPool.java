@@ -4,6 +4,7 @@ import IntermediateCode.BasicBlock;
 import IntermediateCode.IntermediateCode;
 import IntermediateCode.Operand;
 import MipsCode.MipsCode.MipsCode;
+import Tool.Optimizer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -18,7 +19,10 @@ public class RegisterPool {
     private HashSet<String> freezeRegs;
     public static ArrayList<String> tempRegs = new ArrayList<String>() {
         {
-            add("$ra");
+//            add("$ra");
+            if (!Optimizer.RaOptimizer) {
+                add("$ra");
+            }
             add("$a0");
             add("$a1");
             add("$a2");
@@ -32,6 +36,7 @@ public class RegisterPool {
             add("$t6");
             add("$t7");
             add("$t8");
+            add("$t9");
         }
     };
 
@@ -111,8 +116,7 @@ public class RegisterPool {
 //        System.err.println("inter " + intermediateCode.getTarget());
 //        System.err.println(ansVar);
 //        System.err.println(maxv)
-        if (ansVar != null && maxv != Integer.MAX_VALUE &&
-            (!ansVar.isGlobal() || (ansVar.isTemp() && ansVar.isAddress()))) {
+        if (ansVar != null && maxv != Integer.MAX_VALUE) {
 
             ansVar.storeToMemory(mipsVisitor, varAddressOffset, ans);
         }
@@ -182,9 +186,11 @@ public class RegisterPool {
                 }
 
                 if (varName.isGlobal()) {
-                    mipsVisitor.addMipsCode(MipsCode.generateADDIU(tempReg, "$gp",
-                        String.valueOf(mipsVisitor.getOffsetByVar(varName.getName(), 0))));
-                    return tempReg;
+                    if (varName.isAddress()) {
+                        mipsVisitor.addMipsCode(MipsCode.generateADDIU(tempReg, "$gp",
+                            String.valueOf(mipsVisitor.getOffsetByVar(varName.getName(), 0))));
+                        return tempReg;
+                    }
                 }
 
                 if (!varName.isTemp()) {
@@ -225,9 +231,11 @@ public class RegisterPool {
         }
 
         if (varName.isGlobal()) {
-            mipsVisitor.addMipsCode(MipsCode.generateADDIU(tempReg, "$gp",
-                String.valueOf(mipsVisitor.getOffsetByVar(varName.getName(), 0))));
-            return tempReg;
+            if (varName.isAddress()) {
+                mipsVisitor.addMipsCode(MipsCode.generateADDIU(tempReg, "$gp",
+                    String.valueOf(mipsVisitor.getOffsetByVar(varName.getName(), 0))));
+                return tempReg;
+            }
         }
 
         if (!varName.isTemp()) {
@@ -352,7 +360,7 @@ public class RegisterPool {
                 return;
             }
             Operand tempVarName = tempRegToVarMap.get(reg);
-            if (intermediateCode.getBasicBlock()
+            if (tempVarName.isGlobal() || intermediateCode.getBasicBlock()
                 .findUsedVarNextCode(intermediateCode, tempVarName) !=
                 Integer.MAX_VALUE) {
                 tempVarName.storeToMemory(mipsVisitor, varAddressOffset, reg);
@@ -381,7 +389,17 @@ public class RegisterPool {
     public ArrayList<String> getUsedTempRegs(HashSet<Operand> usedTempVars) {
         ArrayList<String> regs = new ArrayList<>();
         varToTempRegMap.forEach((k,v) -> {
-            if (usedTempVars.contains(k) || k.isLocal()) {
+            if (usedTempVars.contains(k) || k.isLocalAndVar() || (k.isGlobal() && k.isVar())) {
+                regs.add(v);
+            }
+        });
+        return regs;
+    }
+
+    public ArrayList<String> getGlobalUsedTempRegs() {
+        ArrayList<String> regs = new ArrayList<>();
+        varToTempRegMap.forEach((k,v) -> {
+            if (k.isGlobal() && k.isVar()) {
                 regs.add(v);
             }
         });

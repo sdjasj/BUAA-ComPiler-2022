@@ -27,9 +27,6 @@ public class OutputCode extends IntermediateCode {
             registerPool.clearSpecialReg(source1,"$a0", varAddressOffset, mipsVisitor, this);
             if (source1.isNUMBER()) {
                 mipsVisitor.addMipsCode(MipsCode.generateLi("$a0", source1.getName()));
-            } else if (source1.isGlobal()) {
-                mipsVisitor.addMipsCode(MipsCode.generateLW("$a0",
-                    String.valueOf(mipsVisitor.getOffsetByVar(source1.getName(), 0)), "$gp"));
             } else {
                 String targetReg = getSrcReg(source1, varAddressOffset, mipsVisitor, registerPool);
 //                System.err.println(source1);

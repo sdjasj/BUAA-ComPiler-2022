@@ -74,18 +74,19 @@ public class VarDefNode extends ParserNode {
         } else {
             if (dimensionLength.size() == 0) {
                 //非数组变量
-                String name =  TCode.reName(ident.getValue(), blockDepth);
+                String name = TCode.reName(ident.getValue(), blockDepth);
                 Operand target = Operand.getNewOperand(name, Operand.OperandType.VAR);
                 DeclCode declCode =
                     new DeclCode(target, new ArrayList<>());
                 intermediateVisitor.addIntermediateCode(declCode);
                 if (hasInitval()) {
-                    Operand src1 = initValNode.generateMidCodeAndReturnTempVarAsVar(intermediateVisitor);
+                    Operand src1 =
+                        initValNode.generateMidCodeAndReturnTempVarAsVar(intermediateVisitor);
                     AssignCode assignCode = new AssignCode(target, src1);
                     intermediateVisitor.addIntermediateCode(assignCode);
                 }
             } else {
-                String name =  TCode.reName(ident.getValue(), blockDepth);
+                String name = TCode.reName(ident.getValue(), blockDepth);
                 Operand target = Operand.getNewOperand(name, Operand.OperandType.ADDRESS);
                 DeclCode declCode = new DeclCode(target, dimensionLength);
                 intermediateVisitor.addIntermediateCode(declCode);
@@ -96,7 +97,8 @@ public class VarDefNode extends ParserNode {
                         Operand t = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
                         intermediateVisitor.addIntermediateCode(new AssignCode(t, operands.get(i)));
                         MemoryCode memoryCode = new MemoryCode(t, target,
-                            Operand.getNewOperand(String.valueOf(i * 4), Operand.OperandType.NUMBER),
+                            Operand.getNewOperand(String.valueOf(i * 4),
+                                Operand.OperandType.NUMBER),
                             Operator.STORE);
                         intermediateVisitor.addIntermediateCode(memoryCode);
                     }

@@ -6,6 +6,7 @@ public class TCode {
     public static int cnt = 0;
     public static int cntStr = 0;
     public static int cntLabel = 0;
+    public static int loopDepth = 0;
 
     public static String genNewT() {
         String target = "t@" + cnt;

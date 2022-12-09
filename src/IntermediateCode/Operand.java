@@ -19,18 +19,31 @@ public class Operand {
     private String reg;
     private boolean allocatedReg;
     private boolean global = false;
+    public static int curLoopDepth = 0;
+    private int loopDepth = 0;
+    private boolean crossBlock = false;
 
     private static HashSet<Operand> oldName = new HashSet<>();
 
     public static Operand getNewOperand(String name, OperandType operandType) {
         for (Operand operand : oldName) {
             if (operand.operandType.equals(operandType) && operand.getName().equals(name)) {
+                operand.setLoopDepth(curLoopDepth);
                 return operand;
             }
         }
         Operand operand = new Operand(name, operandType);
         oldName.add(operand);
+        operand.setLoopDepth(curLoopDepth);
         return operand;
+    }
+
+    public void setCrossBlock(boolean crossBlock) {
+        this.crossBlock = crossBlock;
+    }
+
+    public boolean isCrossBlock() {
+        return crossBlock;
     }
 
     public static void clearOperands() {
@@ -40,6 +53,14 @@ public class Operand {
     private Operand(String name, OperandType operandType) {
         this.name = name;
         this.operandType = operandType;
+    }
+
+    public void setLoopDepth(int loopDepth) {
+        this.loopDepth += 1 << loopDepth;
+    }
+
+    public int getLoopDepth() {
+        return loopDepth;
     }
 
     public String getName() {
@@ -75,7 +96,11 @@ public class Operand {
     }
 
     public boolean isLocal() {
-        return isVar() && !isGlobal() && !isTemp();
+        return !name.startsWith("$") && !isGlobal() && !isTemp();
+    }
+
+    public boolean isLocalAndVar() {
+        return isVar() && !isGlobal() && !isTemp() && !name.equals("RET");
     }
 
     public void setReg(String reg) {
@@ -87,6 +112,7 @@ public class Operand {
     }
 
     public String getReg() {
+//        System.err.println(name + " " + reg);
         return reg;
     }
 
@@ -104,7 +130,7 @@ public class Operand {
             } else {
                 System.err.println("error in store global reg");
             }
-        } else if (isLocal() || isTemp()) {
+        } else if (isLocalAndVar() || isTemp()) {
             mipsVisitor.addMipsCode(
                 MipsCode.generateSW(reg, String.valueOf(varAddressOffset.getVarOffset(this)),
                     "$sp"));
@@ -113,7 +139,13 @@ public class Operand {
 
     public void loadToReg(MipsVisitor mipsVisitor, VarAddressOffset varAddressOffset, String reg) {
         if (isGlobal()) {
-            mipsVisitor.addMipsCode(MipsCode.generateLW(reg, name, "$0"));
+            if (isVar()) {
+                mipsVisitor.addMipsCode(
+                    MipsCode.generateLW(reg, String.valueOf(mipsVisitor.getOffsetByVar(name, 0)),
+                        "$gp"));
+            } else {
+                System.err.println("error in load global reg");
+            }
         } else {
             mipsVisitor.addMipsCode(
                 MipsCode.generateLW(reg, String.valueOf(varAddressOffset.getVarOffset(this)),

@@ -38,10 +38,10 @@ public class MemoryCode extends IntermediateCode {
     @Override
     public HashSet<Operand> getUsedSet() {
         HashSet<Operand> usedSet = new HashSet<>();
-        if (target != null && target.isLocal()) {
+        if (target != null && target.isLocalAndVar()) {
             usedSet.add(target);
         }
-        if (source2 != null && source2.isLocal()) {
+        if (source2 != null && source2.isLocalAndVar()) {
             usedSet.add(source2);
         }
         return usedSet;
@@ -99,9 +99,13 @@ public class MemoryCode extends IntermediateCode {
                             mipsVisitor.getOffsetByVar(source1.getName(),
                                 Integer.parseInt(source2Reg))), "$gp"));
                 } else {
-                    mipsVisitor.addMipsCode(MipsCode.generateADDU("$1", "$gp", source2Reg));
+                    String reg =
+                        registerPool.getTempReg(false, varAddressOffset, mipsVisitor, this);
+                    mipsVisitor.addMipsCode(MipsCode.generateADDU(reg, "$gp", source2Reg));
                     mipsVisitor.addMipsCode(
-                        MipsCode.generateLW(targetReg, String.valueOf(mipsVisitor.getOffsetByVar(source1.getName(), 0)), "$1"));
+                        MipsCode.generateLW(targetReg,
+                            String.valueOf(mipsVisitor.getOffsetByVar(source1.getName(), 0)), reg));
+                    registerPool.unFreeze(reg);
                 }
             } else if (op == Operator.STORE) {
                 if (source2.isNUMBER()) {
@@ -110,11 +114,14 @@ public class MemoryCode extends IntermediateCode {
                             mipsVisitor.getOffsetByVar(source1.getName(),
                                 Integer.parseInt(source2Reg))), "$gp"));
                 } else {
-                    mipsVisitor.addMipsCode(MipsCode.generateADDU("$1", "$gp", source2Reg));
+                    String reg =
+                        registerPool.getTempReg(false, varAddressOffset, mipsVisitor, this);
+                    mipsVisitor.addMipsCode(MipsCode.generateADDU(reg, "$gp", source2Reg));
                     mipsVisitor.addMipsCode(
                         MipsCode.generateSW(targetReg,
                             String.valueOf(mipsVisitor.getOffsetByVar(source1.getName(), 0)),
-                            "$1"));
+                            reg));
+                    registerPool.unFreeze(reg);
                 }
             }
 

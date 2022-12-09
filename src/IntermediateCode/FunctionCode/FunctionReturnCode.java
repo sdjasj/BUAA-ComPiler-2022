@@ -7,6 +7,7 @@ import MipsCode.MipsCode.MipsCode;
 import MipsCode.MipsVisitor;
 import MipsCode.RegisterPool;
 import MipsCode.VarAddressOffset;
+import Tool.Optimizer;
 import Tool.Pair;
 
 import java.util.ArrayList;
@@ -36,8 +37,8 @@ public class FunctionReturnCode extends IntermediateCode {
     @Override
     public HashSet<Operand> getUsedSet() {
         HashSet<Operand> ans = new HashSet<>();
-        if (target != null) {
-            ans.add(target);
+        if (source1 != null) {
+            ans.add(source1);
         }
         return ans;
     }
@@ -45,6 +46,14 @@ public class FunctionReturnCode extends IntermediateCode {
     @Override
     public void toMips(MipsVisitor mipsVisitor, VarAddressOffset varAddressOffset,
                        RegisterPool registerPool) {
+
+        ArrayList<String> regs = registerPool.getGlobalUsedTempRegs();
+
+        for (String reg : regs) {
+//            System.err.println(reg);
+//            System.err.println(registerPool.getVarNameOfTempReg(reg));
+            registerPool.getVarNameOfTempReg(reg).storeToMemory(mipsVisitor, varAddressOffset, reg);
+        }
 
         if (source1 == null) {
             ArrayList<String> usedGlobalRegs = new ArrayList<>(conflictGraph.getUsedGlobalRegs());
@@ -54,9 +63,11 @@ public class FunctionReturnCode extends IntermediateCode {
                 mipsVisitor.addMipsCode(storeUsedGlobalRegs);
             }
 
-            mipsVisitor.addMipsCode(
-                MipsCode.generateLW("$ra", String.valueOf(varAddressOffset.getRegOffset("$ra")),
-                    "$sp"));
+            if (Optimizer.RaOptimizer && basicBlock.getFunction().isCallOtherFunc()) {
+                mipsVisitor.addMipsCode(
+                    MipsCode.generateLW("$ra", String.valueOf(varAddressOffset.getRegOffset("$ra")),
+                        "$sp"));
+            }
 
             //reset sp
             int offset = varAddressOffset.getCurOffset();
@@ -82,9 +93,11 @@ public class FunctionReturnCode extends IntermediateCode {
             mipsVisitor.addMipsCode(storeUsedGlobalRegs);
         }
 
-        mipsVisitor.addMipsCode(
-            MipsCode.generateLW("$ra", String.valueOf(varAddressOffset.getRegOffset("$ra")),
-                "$sp"));
+        if (Optimizer.RaOptimizer && basicBlock.getFunction().isCallOtherFunc()) {
+            mipsVisitor.addMipsCode(
+                MipsCode.generateLW("$ra", String.valueOf(varAddressOffset.getRegOffset("$ra")),
+                    "$sp"));
+        }
 
         //reset sp
         int offset = varAddressOffset.getCurOffset();

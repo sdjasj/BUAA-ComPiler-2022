@@ -29,7 +29,7 @@ public class FunctionParam extends IntermediateCode {
 
     @Override
     public Operand getLeftVal() {
-        return null;
+        return target;
     }
 
     @Override

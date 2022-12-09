@@ -7,6 +7,9 @@ import MipsCode.MipsCode.MipsCode;
 import MipsCode.MipsVisitor;
 import MipsCode.RegisterPool;
 import MipsCode.VarAddressOffset;
+import MipsCode.MulOptimizer;
+import Tool.Optimizer;
+import MipsCode.DivOptimizer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,6 +19,10 @@ public class CalculateCode extends IntermediateCode {
     public CalculateCode(Operand target, Operand source1, Operand source2,
                          Operator op) {
         super(target, source1, source2, op);
+        if (!source2.isNUMBER() && source1.isNUMBER() && op == Operator.ADD) {
+            this.source1 = source2;
+            this.source2 = source1;
+        }
     }
 
     public Operand getValue() {
@@ -116,7 +123,8 @@ public class CalculateCode extends IntermediateCode {
         String resReg;
 
         if (target.isGlobal()) {
-            resReg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor, this);
+            resReg =
+                registerPool.allocateRegToVarNotLoad(target, varAddressOffset, mipsVisitor, this);
         } else {
             resReg =
                 registerPool.allocateRegToVarNotLoad(target, varAddressOffset, mipsVisitor, this);
@@ -146,15 +154,29 @@ public class CalculateCode extends IntermediateCode {
         } else if (op == Operator.MUL) {
             MipsCode mipsCode = null;
             if (source1.isNUMBER()) {
-                mipsVisitor.addMipsCode(MipsCode.generateLi("$1", source1Reg));
-                mipsCode = MipsCode.generateMUL(resReg, "$1", source2Reg);
+                if (Optimizer.MulOptimizer && MulOptimizer.canUseShift(Integer.parseInt(source1.getName()))) {
+                    MulOptimizer.simplifyMul(resReg, source2Reg,
+                        Integer.parseInt(source1.getName()), mipsVisitor, registerPool,
+                        varAddressOffset, this);
+                } else {
+                    mipsVisitor.addMipsCode(MipsCode.generateLi("$1", source1Reg));
+                    mipsCode = MipsCode.generateMUL(resReg, "$1", source2Reg);
+                    mipsVisitor.addMipsCode(mipsCode);
+                }
             } else if (source2.isNUMBER()) {
-                mipsVisitor.addMipsCode(MipsCode.generateLi("$1", source2Reg));
-                mipsCode = MipsCode.generateMUL(resReg, source1Reg, "$1");
+                if (Optimizer.MulOptimizer && MulOptimizer.canUseShift(Integer.parseInt(source2.getName()))) {
+                    MulOptimizer.simplifyMul(resReg, source1Reg,
+                        Integer.parseInt(source2.getName()), mipsVisitor, registerPool,
+                        varAddressOffset, this);
+                } else {
+                    mipsVisitor.addMipsCode(MipsCode.generateLi("$1", source2Reg));
+                    mipsCode = MipsCode.generateMUL(resReg, source1Reg, "$1");
+                    mipsVisitor.addMipsCode(mipsCode);
+                }
             } else {
                 mipsCode = MipsCode.generateMUL(resReg, source1Reg, source2Reg);
+                mipsVisitor.addMipsCode(mipsCode);
             }
-            mipsVisitor.addMipsCode(mipsCode);
         } else if (op == Operator.DIV) {
             MipsCode mipsCode = null;
             if (source1.isNUMBER()) {
@@ -163,12 +185,17 @@ public class CalculateCode extends IntermediateCode {
                 mipsVisitor.addMipsCode(mipsCode);
                 MipsCode mipsCode1 = MipsCode.generateMFLO(resReg);
                 mipsVisitor.addMipsCode(mipsCode1);
-            } else if (source2.isNUMBER()) {
-                mipsVisitor.addMipsCode(MipsCode.generateLi("$1", source2Reg));
-                mipsCode = MipsCode.generateDIV(source1Reg, "$1");
-                mipsVisitor.addMipsCode(mipsCode);
-                MipsCode mipsCode1 = MipsCode.generateMFLO(resReg);
-                mipsVisitor.addMipsCode(mipsCode1);
+            } else if (source2.isNUMBER() && !source2.getName().equals("0")) {
+                if (Optimizer.DivModOptimizer) {
+                    DivOptimizer.simplifyDiv(resReg, source1Reg, Integer.parseInt(source2Reg),
+                        mipsVisitor, registerPool, varAddressOffset, this);
+                } else {
+                    mipsVisitor.addMipsCode(MipsCode.generateLi("$1", source2Reg));
+                    mipsCode = MipsCode.generateDIV(source1Reg, "$1");
+                    mipsVisitor.addMipsCode(mipsCode);
+                    MipsCode mipsCode1 = MipsCode.generateMFLO(resReg);
+                    mipsVisitor.addMipsCode(mipsCode1);
+                }
             } else {
                 mipsCode = MipsCode.generateDIV(source1Reg, source2Reg);
                 mipsVisitor.addMipsCode(mipsCode);
@@ -184,11 +211,16 @@ public class CalculateCode extends IntermediateCode {
                 MipsCode mipsCode1 = MipsCode.generateMFHI(resReg);
                 mipsVisitor.addMipsCode(mipsCode1);
             } else if (source2.isNUMBER()) {
-                mipsVisitor.addMipsCode(MipsCode.generateLi("$1", source2Reg));
-                mipsCode = MipsCode.generateDIV(source1Reg, "$1");
-                mipsVisitor.addMipsCode(mipsCode);
-                MipsCode mipsCode1 = MipsCode.generateMFHI(resReg);
-                mipsVisitor.addMipsCode(mipsCode1);
+                if (Optimizer.DivModOptimizer) {
+                    DivOptimizer.simplifyMod(resReg, source1Reg, Integer.parseInt(source2Reg),
+                        mipsVisitor, registerPool, varAddressOffset, this);
+                } else {
+                    mipsVisitor.addMipsCode(MipsCode.generateLi("$1", source2Reg));
+                    mipsCode = MipsCode.generateDIV(source1Reg, "$1");
+                    mipsVisitor.addMipsCode(mipsCode);
+                    MipsCode mipsCode1 = MipsCode.generateMFHI(resReg);
+                    mipsVisitor.addMipsCode(mipsCode1);
+                }
             } else {
                 mipsCode = MipsCode.generateDIV(source1Reg, source2Reg);
                 mipsVisitor.addMipsCode(mipsCode);
@@ -199,12 +231,12 @@ public class CalculateCode extends IntermediateCode {
 
 
         //左值为全局变量
-        if (target.isGlobal()) {
-            MipsCode mipsCode1 =
-                MipsCode.generateSW(resReg, String.valueOf(mipsVisitor.getOffsetByVar(
-                    target.getName(), 0)), "$gp");
-            mipsVisitor.addMipsCode(mipsCode1);
-        }
+//        if (target.isGlobal()) {
+//            MipsCode mipsCode1 =
+//                MipsCode.generateSW(resReg, String.valueOf(mipsVisitor.getOffsetByVar(
+//                    target.getName(), 0)), "$gp");
+//            mipsVisitor.addMipsCode(mipsCode1);
+//        }
         registerPool.unFreeze(source1Reg);
         registerPool.unFreeze(source2Reg);
         registerPool.unFreeze(resReg);

@@ -43,4 +43,10 @@ public class ConflictGraph {
     public HashSet<String> getUsedGlobalRegs() {
         return new HashSet<>(usedGlobalRegs.values());
     }
+
+    public void testPrint() {
+        nodesAndEdges.forEach((k,v) -> {
+            System.err.println(k + "    " + v);
+        });
+    }
 }

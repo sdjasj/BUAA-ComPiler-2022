@@ -3,6 +3,9 @@ package IntermediateCode.AllCode;
 import IntermediateCode.IntermediateCode;
 import IntermediateCode.Operand;
 import IntermediateCode.Operator;
+import MipsCode.MipsVisitor;
+import MipsCode.RegisterPool;
+import MipsCode.VarAddressOffset;
 import Tool.Pair;
 
 import java.util.ArrayList;
@@ -30,6 +33,13 @@ public class DeclCode extends IntermediateCode {
             size *= dimension;
         }
         return size * 4;
+    }
+
+    @Override
+    public void toMips(MipsVisitor mipsVisitor, VarAddressOffset varAddressOffset,
+                       RegisterPool registerPool) {
+        String reg =
+            registerPool.allocateRegToVarNotLoad(target, varAddressOffset, mipsVisitor, this);
     }
 
     @Override

@@ -9,19 +9,25 @@ public class MipsOptimizer {
         for (int i = 0; i < mipsCodes.size(); i++) {
             MipsCode mipsCode = mipsCodes.get(i);
             String codeType = mipsCode.getCodeName();
-//            if (codeType.equals("addu") || codeType.equals("addiu") || codeType.equals("subu") ||
-//                codeType.equals("subiu") || codeType.equals("mul")) {
+//            if (codeType.equals("addu") || codeType.equals("subu") || codeType.equals("addiu") ||
+//                codeType.equals("subiu")) {
 //                int j = i + 1;
 //                while (mipsCodes.get(j).getCodeName().equals("comment")) {
 //                    j++;
 //                }
-//                if (j < mipsCodes.size() && mipsCodes.get(j).getCodeName().equals("move")) {
+//                if (j < mipsCodes.size() && (
+//                    mipsCodes.get(j).getCodeName().equals("addu") ||
+//                        mipsCodes.get(j).getCodeName().equals("subu") ||
+//                        mipsCodes.get(j).getCodeName().equals("addou") ||
+//                        mipsCodes.get(j).getCodeName().equals("subiu")
+//                    )) {
 //                    MipsCode mipsCode1 = mipsCodes.get(j);
-//                    if (mipsCode1.getSource1().equals(mipsCode.getTarget())) {
-//                        mipsCode.setTarget(mipsCode1.getTarget());
-//                        mipsCodes.remove(j);
+//                    if (mipsCode1.getTarget().equals(mipsCode.getTarget())) {
+//                        mipsCodes.remove(i);
+//                        i--;
 //                    }
 //                }
+//                continue;
 //            }
             if (codeType.equals("li")) {
                 int j = i + 1;

@@ -22,6 +22,7 @@ import MipsCode.MipsCode.MipsCode;
 import MipsCode.MipsVisitor;
 import MipsCode.RegisterPool;
 import MipsCode.VarAddressOffset;
+import Tool.Optimizer;
 
 public class Function {
     private ArrayList<IntermediateCode> intermediateCodes;
@@ -124,16 +125,19 @@ public class Function {
     }
 
     public void basicBlockOptimize() {
-        boolean flag1 = true;
-        boolean flag2 = true;
+
 //        System.err.println(name);
-        while (flag1 || flag2) {
-            BlockOptimizer.peepholes(flowGraph);
+        BlockOptimizer.peepholes(flowGraph);
+        while (true) {
+            boolean flag = false;
             BlockOptimizer.reachDefineAnalyze(flowGraph);
-            flag1 = BlockOptimizer.ReplicaPropagation(flowGraph);
-            BlockOptimizer.peepHolesForReWrite(flowGraph);
+            flag |= BlockOptimizer.ReplicaPropagation(flowGraph);
+            flag |= BlockOptimizer.peepHolesForReWrite(flowGraph);
             BlockOptimizer.activeVarAnalyze(flowGraph);
-            flag2 = BlockOptimizer.deleteDeadCode(flowGraph);
+            flag |= BlockOptimizer.deleteDeadCode(flowGraph);
+            if (!flag) {
+                break;
+            }
 //            System.err.println(flag1 + "1");
 //            System.err.println(flag2 + "2");
         }
@@ -142,8 +146,22 @@ public class Function {
     public void colorAllocate() {
         conflictGraph = new ConflictGraph();
         BlockOptimizer.buildConflictGraph(conflictGraph, flowGraph);
+//        conflictGraph.testPrint();
         RegisterAllocator registerAllocator = new RegisterAllocator(conflictGraph);
-        registerAllocator.allocGlobalReg();
+        boolean flag = false;
+//        while (RegisterPool.tempRegs.size() >= 4) {
+//            flag = registerAllocator.allocGlobalReg(false);
+//            if (flag) {
+//                break;
+//            }
+//            RegisterAllocator.globalRegs.add(
+//                RegisterPool.tempRegs.get(RegisterPool.tempRegs.size() - 1));
+//            RegisterPool.tempRegs.remove(RegisterPool.tempRegs.size() - 1);
+//        }
+//        if (!flag) {
+//            registerAllocator.allocGlobalReg(true);
+//        }
+        registerAllocator.allocGlobalReg(true);
     }
 
 
@@ -161,7 +179,9 @@ public class Function {
                 //函数参数
                 getParamOffset(varAddressOffset);
                 //ra
-                varAddressOffset.addReg("$ra");
+                if (Optimizer.RaOptimizer && isCallOtherFunc()) {
+                    varAddressOffset.addReg("$ra");
+                }
                 //全局寄存器
                 varAddressOffset.addGlobalRegsAddress(conflictGraph);
 //                varAddressOffset.addAllRegs(registerPool);
@@ -175,10 +195,12 @@ public class Function {
                 MipsCode mipsCode = MipsCode.generateADDIU("$sp", "$sp", String.valueOf(-offset));
                 mipsVisitor.addMipsCode(mipsCode);
 
-                MipsCode raStored =
-                    MipsCode.generateSW("$ra", String.valueOf(varAddressOffset.getRegOffset("$ra")),
-                        "$sp");
-                mipsVisitor.addMipsCode(raStored);
+                if (Optimizer.RaOptimizer && isCallOtherFunc()) {
+                    MipsCode raStored =
+                        MipsCode.generateSW("$ra", String.valueOf(varAddressOffset.getRegOffset("$ra")),
+                            "$sp");
+                    mipsVisitor.addMipsCode(raStored);
+                }
 
                 //现在全局寄存器全存
                 if (!isMain) {
@@ -238,9 +260,8 @@ public class Function {
                     String.valueOf(
                         varAddressOffset.getVarOffset(varOfReg)), "$sp");
                 mipsVisitor.addMipsCode(storeUsedGlobalRegs);
-            } else if (varOfReg.isGlobal()) {
-                mipsVisitor.addMipsCode(
-                    MipsCode.generateSW(varToReg.get(varOfReg), varOfReg.getName(), "$0"));
+            } else if (varOfReg.isGlobal() && varOfReg.isVar()) {
+                varOfReg.storeToMemory(mipsVisitor, varAddressOffset, varToReg.get(varOfReg));
             }
         }
 

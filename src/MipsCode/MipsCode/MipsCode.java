@@ -1,5 +1,6 @@
 package MipsCode.MipsCode;
 
+
 public class MipsCode {
     protected String target;
     protected String source1;
@@ -61,6 +62,7 @@ public class MipsCode {
     }
 
     public static MipsCode generateADDIU(String target, String source1, String source2) {
+
         MipsCode mipsCode = new MipsCode("addiu", target, source1, source2);
         return mipsCode;
     }
@@ -115,6 +117,11 @@ public class MipsCode {
         return mipsCode;
     }
 
+    public static MipsCode generateDIV(String target, String source1, String source2) {
+        MipsCode mipsCode = new MipsCode("div", target, source1, source2);
+        return mipsCode;
+    }
+
     public static MipsCode generateSYSCALL() {
         MipsCode mipsCode = new MipsCode("syscall", null, null, null);
         return mipsCode;
@@ -150,8 +157,25 @@ public class MipsCode {
         return mipsCode;
     }
 
+    public static MipsCode generateSLL(String target, String source1, String source2) {
+        MipsCode mipsCode = new MipsCode("sll", target, source1, source2);
+        return mipsCode;
+    }
 
+    public static MipsCode generateSRA(String target, String source1, String source2) {
+        MipsCode mipsCode = new MipsCode("sra", target, source1, source2);
+        return mipsCode;
+    }
 
+    public static MipsCode generateSRL(String target, String source1, String source2) {
+        MipsCode mipsCode = new MipsCode("srl", target, source1, source2);
+        return mipsCode;
+    }
+
+    public static MipsCode generateSLT(String target, String source1, String source2) {
+        MipsCode mipsCode = new MipsCode("slt", target, source1, source2);
+        return mipsCode;
+    }
 
 
     public void output() {
@@ -201,6 +225,14 @@ public class MipsCode {
             System.out.println("j " + target);
         } else if (codeName.equals("mul")) {
             System.out.println("mul " + target + ", " + source1 + ", " + source2);
+        } else if (codeName.equals("sll")) {
+            System.out.println("sll " + target + ", " + source1 + ", " + source2);
+        } else if (codeName.equals("sra")) {
+            System.out.println("sra " + target + ", " + source1 + ", " + source2);
+        } else if (codeName.equals("srl")) {
+            System.out.println("srl " + target + ", " + source1 + ", " + source2);
+        } else if (codeName.equals("slt")) {
+            System.out.println("slt " + target + ", " + source1 + ", " + source2);
         }
     }
 }

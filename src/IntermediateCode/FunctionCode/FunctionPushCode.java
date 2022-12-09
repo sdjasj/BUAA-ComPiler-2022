@@ -47,16 +47,15 @@ public class FunctionPushCode extends IntermediateCode {
                 mipsVisitor.addMipsCode(
                     MipsCode.generateSW(reg, String.valueOf(-(offset * 4 + 4)), "$sp"));
             } else if (source1.isVar()) {
-//                String reg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor, this);
-//                mipsVisitor.addMipsCode(MipsCode.generateLW(reg, source1.getName(), "$0"));
-//                mipsVisitor.addMipsCode(
-//                    MipsCode.generateSW(reg, String.valueOf(-(offset * 4 + 4)), "$sp"));
-//                registerPool.unFreeze(reg);
-                mipsVisitor.addMipsCode(MipsCode.generateLW("$1",
-                    String.valueOf(mipsVisitor.getOffsetByVar(source1.getName(), 0)), "$gp"));
+                String reg =
+                    registerPool.allocateRegToVarLoad(source1, varAddressOffset, mipsVisitor, this);
                 mipsVisitor.addMipsCode(
-                    MipsCode.generateSW("$1", String.valueOf(-(offset * 4 + 4)), "$sp"));
-                registerPool.unFreeze("$1");
+                    MipsCode.generateSW(reg, String.valueOf(-(offset * 4 + 4)), "$sp"));
+//                mipsVisitor.addMipsCode(MipsCode.generateLW("$1",
+//                    String.valueOf(mipsVisitor.getOffsetByVar(source1.getName(), 0)), "$gp"));
+//                mipsVisitor.addMipsCode(
+//                    MipsCode.generateSW("$1", String.valueOf(-(offset * 4 + 4)), "$sp"));
+//                registerPool.unFreeze("$1");
             } else {
                 System.err.println("error in toMips of funtion push by global");
             }

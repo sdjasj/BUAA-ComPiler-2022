@@ -22,6 +22,7 @@ public class BlockOptimizer {
         ArrayList<BasicBlock> basicBlocks = flowGraph.getBasicBlocks();
         for (BasicBlock basicBlock : basicBlocks) {
             basicBlock.calUsedDefSet();
+            basicBlock.clearActiveInOutSet();
         }
         boolean flag = true;
         while (flag) {
@@ -63,7 +64,9 @@ public class BlockOptimizer {
                     if (allDefSet.containsKey(defVar)) {
                         if (i == j) {
                             HashSet<IntermediateCode> intermediateCodes = allDefSet.get(defVar);
-                            intermediateCodes.remove(basicBlocks.get(i).getGenSet().get(defVar));
+                            if (intermediateCodes.size() == 1) {
+                                intermediateCodes.remove(basicBlocks.get(i).getGenSet().get(defVar));
+                            }
                             killSet.get(defVar).addAll(intermediateCodes);
                         } else {
                             killSet.get(defVar).addAll(allDefSet.get(defVar));
@@ -107,7 +110,8 @@ public class BlockOptimizer {
                     defSet.put(intermediateCode.target, temp);
                 }
             });
-            for (IntermediateCode intermediateCode : intermediateCodes) {
+            for (int i = 0; i < intermediateCodes.size(); i++) {
+                IntermediateCode intermediateCode = intermediateCodes.get(i);
 //                if (intermediateCode instanceof MemoryCode) {
 //                    if (!intermediateCode.target.isGlobal()) {
 //                        if (defSet.containsKey(intermediateCode.target)) {
@@ -128,6 +132,7 @@ public class BlockOptimizer {
                     if (first != null && defSet.containsKey(first) && defSet.get(first).size() == 1) {
                         IntermediateCode assignCode = defSet.get(first).iterator().next();
                         if (assignCode instanceof AssignCode && !assignCode.source1.isGlobal() &&
+                            !assignCode.target.isGlobal() &&
                             !first.equals(assignCode.source1) && !assignCode.source1.getName().equals("RET")) {
                             HashSet<IntermediateCode> reWriteCodes = defSet.get(assignCode.source1);
                             if (reWriteCodes == null || reWriteCodes.size() == 0 ||
@@ -144,6 +149,26 @@ public class BlockOptimizer {
                                 flag = true;
                             }
                         }
+//                        else if (assignCode instanceof CalculateCode &&
+//                            intermediateCode instanceof AssignCode &&
+//                            !assignCode.source1.isGlobal() &&
+//                            !assignCode.target.isGlobal()) {
+//                            HashSet<IntermediateCode> reWriteCodes = defSet.get(assignCode.source1);
+//                            HashSet<IntermediateCode> reWriteCodes2 =
+//                                defSet.get(assignCode.source2);
+//                            if ((reWriteCodes == null || reWriteCodes.size() == 0 ||
+//                                !hasPath(assignCode, reWriteCodes)) &&
+//                                (reWriteCodes2 == null || reWriteCodes2.size() == 0 ||
+//                                    !hasPath(assignCode, reWriteCodes2))) {
+//                                CalculateCode calculateCode =
+//                                    new CalculateCode(intermediateCode.target, assignCode.source1,
+//                                        assignCode.source2, assignCode.op);
+//                                intermediateCodes.add(i, calculateCode);
+//                                intermediateCodes.remove(i + 1);
+//                                flag = true;
+//                                continue;
+//                            }
+//                        }
                     }
                     if (second != null && defSet.containsKey(second) && defSet.get(second).size() == 1) {
                         IntermediateCode assignCode = defSet.get(second).iterator().next();
@@ -213,18 +238,36 @@ public class BlockOptimizer {
         for (BasicBlock basicBlock : basicBlocks) {
             HashSet<Operand> activeInSet = basicBlock.getActiveInSet();
             ArrayList<IntermediateCode> intermediateCodes = basicBlock.getIntermediateCodes();
-            for (Operand a : activeInSet) {
-                for (Operand b : activeInSet) {
-                    conflictGraph.addEdge(a, b);
-                    conflictGraph.addEdge(b, a);
-                }
-            }
+//            for (Operand a : activeInSet) {
+//                for (Operand b : activeInSet) {
+//                    conflictGraph.addEdge(a, b);
+//                    conflictGraph.addEdge(b, a);
+//                }
+//            }
+            HashSet<Operand> originActiveOutSet = new HashSet<>(basicBlock.getActiveOutSet());
             HashSet<Operand> activeOutSet = new HashSet<>(basicBlock.getActiveOutSet());
             for (int i = intermediateCodes.size() - 1; i >= 0; i--) {
                 Operand leftVal = intermediateCodes.get(i).getLeftVal();
-                if (leftVal == null || !leftVal.isLocal()) {
+                if (leftVal == null || !leftVal.isLocalAndVar()) {
                     HashSet<Operand> usedVal = intermediateCodes.get(i).getUsedSet();
-                    activeOutSet.addAll(usedVal);
+                    if (originActiveOutSet.contains(leftVal) && leftVal != null && leftVal.isTemp()) {
+                        activeOutSet.forEach(conflictGraph::addNode);
+                        activeOutSet.forEach(j -> {
+                            if (leftVal.isLocalAndVar() || (originActiveOutSet.contains(leftVal) && leftVal.isTemp())) {
+                                conflictGraph.addEdge(leftVal, j);
+                                conflictGraph.addEdge(j, leftVal);
+                            }
+                        });
+                        activeOutSet.remove(leftVal);
+                    }
+                    for (Operand operand : usedVal) {
+                        if (operand.isLocalAndVar() ||
+                            (originActiveOutSet.contains(operand) && operand.isTemp())) {
+                            activeOutSet.add(operand);
+                        }
+                    }
+//                    System.err.println(intermediateCodes.get(i));
+//                    System.err.println(usedVal);
                     continue;
                 }
 //                if (leftVal.getName().equals("z_1")) {
@@ -232,12 +275,22 @@ public class BlockOptimizer {
 //                }
                 activeOutSet.forEach(conflictGraph::addNode);
                 HashSet<Operand> usedVal = intermediateCodes.get(i).getUsedSet();
+//                System.err.println(intermediateCodes.get(i));
+//                System.err.println(usedVal);
                 activeOutSet.forEach(j -> {
-                    conflictGraph.addEdge(leftVal, j);
-                    conflictGraph.addEdge(j, leftVal);
+                    if (leftVal.isLocalAndVar() || (originActiveOutSet.contains(leftVal) && leftVal.isTemp())) {
+//                        System.err.println(activeOutSet);
+                        conflictGraph.addEdge(leftVal, j);
+                        conflictGraph.addEdge(j, leftVal);
+                    }
                 });
                 activeOutSet.remove(leftVal);
-                activeOutSet.addAll(usedVal);
+                for (Operand operand : usedVal) {
+                    if (operand.isLocalAndVar() ||
+                        (originActiveOutSet.contains(operand) && operand.isTemp())) {
+                        activeOutSet.add(operand);
+                    }
+                }
             }
         }
     }
@@ -246,14 +299,13 @@ public class BlockOptimizer {
         ArrayList<BasicBlock> basicBlocks = flowGraph.getBasicBlocks();
         boolean flag = false;
         for (BasicBlock basicBlock : basicBlocks) {
-            while (basicBlock.deadCodesDelete()) {
-                flag = true;
-            }
+            flag = basicBlock.deadCodesDelete();
         }
         return flag;
     }
 
-    public static void peepHolesForReWrite(FlowGraph flowGraph) {
+    public static boolean peepHolesForReWrite(FlowGraph flowGraph) {
+        boolean flag = false;
         ArrayList<BasicBlock> basicBlocks = flowGraph.getBasicBlocks();
         for (BasicBlock basicBlock : basicBlocks) {
             ArrayList<IntermediateCode> intermediateCodes = basicBlock.getIntermediateCodes();
@@ -268,6 +320,8 @@ public class BlockOptimizer {
                         assignCode.setBasicBlock(intermediateCode.getBasicBlock());
                         intermediateCodes.add(i, assignCode);
                         intermediateCodes.remove(i + 1);
+                        i--;
+                        flag = true;
                     } else if (intermediateCode.source1.isNUMBER() ||
                         intermediateCode.source2.isNUMBER()) {
                         Operand newVar = ((CalculateCode) intermediateCode).getValue();
@@ -277,6 +331,8 @@ public class BlockOptimizer {
                             assignCode.setBasicBlock(intermediateCode.getBasicBlock());
                             intermediateCodes.add(i, assignCode);
                             intermediateCodes.remove(i + 1);
+                            i--;
+                            flag = true;
                         }
                     }
                 } else if (intermediateCode instanceof SingleCalculateCode) {
@@ -286,18 +342,80 @@ public class BlockOptimizer {
                         assignCode.setBasicBlock(intermediateCode.getBasicBlock());
                         intermediateCodes.add(i, assignCode);
                         intermediateCodes.remove(i + 1);
+                        i--;
+                        flag = true;
                     }
                 } else if (intermediateCode instanceof AssignCode) {
                     if (intermediateCode.target.equals(intermediateCode.source1)) {
                         intermediateCodes.remove(i);
                         i--;
+                        flag = true;
+                    } else if (intermediateCode.target.isTemp()) {
+                        int j = i + 1;
+                        if (j < intermediateCodes.size() &&
+                            intermediateCodes.get(j) instanceof CalculateCode) {
+                            IntermediateCode intermediateCode1 = intermediateCodes.get(j);
+                            if (intermediateCode1.source1.equals(intermediateCode.target)) {
+                                intermediateCode1.setSource1(intermediateCode.source1);
+                                intermediateCodes.remove(i);
+                                i--;
+                                flag = true;
+                            } else if (intermediateCode1.source2.equals(intermediateCode.target)) {
+                                intermediateCode1.setSource2(intermediateCode.source1);
+                                intermediateCodes.remove(i);
+                                i--;
+                                flag = true;
+                            }
+                        }
+                    }
+                }
+            }
+            for (int i = 0; i < intermediateCodes.size(); i++) {
+                IntermediateCode intermediateCode = intermediateCodes.get(i);
+                if (intermediateCode instanceof CalculateCode) {
+                    int j = i + 1;
+                    if (j < intermediateCodes.size() &&
+                        intermediateCodes.get(i) instanceof CalculateCode) {
+                        IntermediateCode intermediateCode1 = intermediateCodes.get(j);
+                        if (intermediateCode.op == Operator.ADD &&
+                            intermediateCode1.op == Operator.ADD &&
+                            intermediateCode.target.isTemp() &&
+                            intermediateCode1.source1.equals(intermediateCode.target) &&
+                            intermediateCode.source2.isNUMBER() &&
+                            intermediateCode1.source2.isNUMBER()) {
+                            intermediateCode1.setSource1(intermediateCode.source1);
+                            intermediateCode1.setSource2(Operand.getNewOperand(String.valueOf(
+                                    Integer.parseInt(intermediateCode.source2.getName()) +
+                                        Integer.parseInt(intermediateCode1.source2.getName())),
+                                Operand.OperandType.NUMBER));
+                            intermediateCodes.remove(i);
+                            i--;
+                            flag = true;
+                        } else if (intermediateCode.op == Operator.ADD &&
+                            intermediateCode1.op == Operator.SUB &&
+                            intermediateCode.target.isTemp() &&
+                            intermediateCode1.source1.equals(intermediateCode.target) &&
+                            intermediateCode.source2.isNUMBER() &&
+                            intermediateCode1.source2.isNUMBER()) {
+                            intermediateCode1.setOp(Operator.ADD);
+                            intermediateCode1.setSource1(intermediateCode.source1);
+                            intermediateCode1.setSource2(Operand.getNewOperand(String.valueOf(
+                                    Integer.parseInt(intermediateCode.source2.getName()) -
+                                        Integer.parseInt(intermediateCode1.source2.getName())),
+                                Operand.OperandType.NUMBER));
+                            intermediateCodes.remove(i);
+                            i--;
+                            flag = true;
+                        }
                     }
                 }
             }
         }
+        return flag;
     }
 
-    public static void peepholes(FlowGraph flowGraph) {
+    public static boolean peepholes(FlowGraph flowGraph) {
+        boolean flag = false;
         ArrayList<BasicBlock> basicBlocks = flowGraph.getBasicBlocks();
         for (BasicBlock basicBlock : basicBlocks) {
             ArrayList<IntermediateCode> intermediateCodes = basicBlock.getIntermediateCodes();
@@ -316,6 +434,7 @@ public class BlockOptimizer {
                             intermediateCode1.source1.equals(intermediateCode.target)) {
                             intermediateCode.setTarget(intermediateCode1.getTarget());
                             intermediateCodes.remove(j);
+                            flag = true;
                         }
                     }
                 }
@@ -335,24 +454,28 @@ public class BlockOptimizer {
                                 intermediateCode1.setOp(Operator.PLUS);
                                 intermediateCodes.remove(i);
                                 i--;
+                                flag = true;
                             } else if (intermediateCode.op == Operator.PLUS &&
                                 intermediateCode1.op == Operator.NEG) {
                                 intermediateCode1.setSource1(intermediateCode.source1);
                                 intermediateCode1.setOp(Operator.NEG);
                                 intermediateCodes.remove(i);
                                 i--;
+                                flag = true;
                             } else if (intermediateCode.op == Operator.NEG &&
                                 intermediateCode1.op == Operator.PLUS) {
                                 intermediateCode1.setSource1(intermediateCode.source1);
                                 intermediateCode1.setOp(Operator.NEG);
                                 intermediateCodes.remove(i);
                                 i--;
+                                flag = true;
                             } else if (intermediateCode.op == Operator.PLUS &&
                                 intermediateCode1.op == Operator.PLUS) {
                                 intermediateCode1.setSource1(intermediateCode.source1);
                                 intermediateCode1.setOp(Operator.PLUS);
                                 intermediateCodes.remove(i);
                                 i--;
+                                flag = true;
                             }
                         }
                     }
@@ -369,6 +492,7 @@ public class BlockOptimizer {
                         if (intermediateCode.target.equals(intermediateCode1.source1)) {
                             intermediateCode.setTarget(intermediateCode1.getTarget());
                             intermediateCodes.remove(j);
+                            flag = true;
                         }
                     }
                 }
@@ -376,40 +500,52 @@ public class BlockOptimizer {
             for (int i = 0; i < intermediateCodes.size(); i++) {
                 IntermediateCode intermediateCode = intermediateCodes.get(i);
                 if (intermediateCode instanceof CalculateCode) {
-//                    System.err.println(intermediateCode);
-                    if (intermediateCode.source1.isNUMBER() &&
-                        intermediateCode.source2.isNUMBER()) {
-                        AssignCode assignCode = new AssignCode(intermediateCode.target,
-                            ((CalculateCode) intermediateCode).getValue());
-                        assignCode.setBasicBlock(intermediateCode.getBasicBlock());
-                        intermediateCodes.add(i, assignCode);
-                        intermediateCodes.remove(i + 1);
-                    } else if (intermediateCode.source1.isNUMBER() ||
-                        intermediateCode.source2.isNUMBER()) {
-                        Operand newVar = ((CalculateCode) intermediateCode).getValue();
-                        if (newVar != null) {
-                            AssignCode assignCode = new AssignCode(intermediateCode.target,
-                                ((CalculateCode) intermediateCode).getValue());
-                            assignCode.setBasicBlock(intermediateCode.getBasicBlock());
-                            intermediateCodes.add(i, assignCode);
-                            intermediateCodes.remove(i + 1);
+                    int j = i + 1;
+                    if (j < intermediateCodes.size() &&
+                        intermediateCodes.get(j) instanceof CalculateCode) {
+                        IntermediateCode intermediateCode1 = intermediateCodes.get(j);
+                        if (intermediateCode.op == Operator.ADD &&
+                            intermediateCode1.op == Operator.ADD &&
+                            intermediateCode.target.isTemp()) {
+                            if (intermediateCode.target.equals(intermediateCode1.source1)) {
+                                if (intermediateCode.source2.isNUMBER() &&
+                                    intermediateCode1.source2.isNUMBER()) {
+                                    intermediateCode1.setSource2(
+                                        Operand.getNewOperand(String.valueOf(
+                                                Integer.parseInt(intermediateCode.source2.getName()) +
+                                                    Integer.parseInt(
+                                                        intermediateCode1.source2.getName())),
+                                            Operand.OperandType.NUMBER));
+                                    intermediateCode1.setSource1(intermediateCode.source1);
+                                    intermediateCodes.remove(i);
+                                    i--;
+                                    flag = true;
+                                }
+                            }
+                        } else if (intermediateCode.op == Operator.SUB &&
+                            intermediateCode1.op == Operator.ADD &&
+                            intermediateCode.target.isTemp()) {
+                            //t0 = 3 - a
+                            //b = t0 + 4
+                            if (intermediateCode.target.equals(intermediateCode1.source1)) {
+                                if (intermediateCode.source1.isNUMBER() &&
+                                    intermediateCode1.source2.isNUMBER()) {
+                                    intermediateCode.setSource1(
+                                        Operand.getNewOperand(String.valueOf(
+                                                Integer.parseInt(intermediateCode.source1.getName()) +
+                                                    Integer.parseInt(
+                                                        intermediateCode1.source2.getName())),
+                                            Operand.OperandType.NUMBER));
+                                    intermediateCode.setTarget(intermediateCode1.target);
+                                    intermediateCodes.remove(j);
+                                    flag = true;
+                                }
+                            }
                         }
-                    }
-                } else if (intermediateCode instanceof SingleCalculateCode) {
-                    if (intermediateCode.source1.isNUMBER()) {
-                        AssignCode assignCode = new AssignCode(intermediateCode.target,
-                            ((SingleCalculateCode) intermediateCode).getValue());
-                        assignCode.setBasicBlock(intermediateCode.getBasicBlock());
-                        intermediateCodes.add(i, assignCode);
-                        intermediateCodes.remove(i + 1);
-                    }
-                } else if (intermediateCode instanceof AssignCode) {
-                    if (intermediateCode.target.equals(intermediateCode.source1)) {
-                        intermediateCodes.remove(i);
-                        i--;
                     }
                 }
             }
         }
+        return flag;
     }
 }

@@ -40,10 +40,11 @@ public class FunctionCallCode extends IntermediateCode {
         for (String reg : regs) {
 //            System.err.println(reg);
 //            System.err.println(registerPool.getVarNameOfTempReg(reg));
-            MipsCode storeUsedGlobalRegs = MipsCode.generateSW(reg,
-                String.valueOf(
-                    varAddressOffset.getVarOffset(registerPool.getVarNameOfTempReg(reg))), "$sp");
-            mipsVisitor.addMipsCode(storeUsedGlobalRegs);
+            registerPool.getVarNameOfTempReg(reg).storeToMemory(mipsVisitor, varAddressOffset, reg);
+//            MipsCode storeUsedGlobalRegs = MipsCode.generateSW(reg,
+//                String.valueOf(
+//                    varAddressOffset.getVarOffset(registerPool.getVarNameOfTempReg(reg))), "$sp");
+//            mipsVisitor.addMipsCode(storeUsedGlobalRegs);
         }
         mipsVisitor.addMipsCode(MipsCode.generateJAL(target.getName()));
         registerPool.clearAllTempRegs();

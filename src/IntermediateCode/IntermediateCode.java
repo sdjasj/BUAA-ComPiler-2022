@@ -106,9 +106,7 @@ public class IntermediateCode {
         } else if (src.isGlobal()) {
             //全局变量
             if (src.isVar()) {
-                reg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor, this);
-                mipsVisitor.addMipsCode(MipsCode.generateLW(reg,
-                    String.valueOf(mipsVisitor.getOffsetByVar(src.getName(), 0)), "$gp"));
+                reg = registerPool.allocateRegToVarLoad(src, varAddressOffset, mipsVisitor, this);
             } else if (src.isAddress()) {
 //                reg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor, this);
 //                mipsVisitor.addMipsCode(MipsCode.generateLA(src.getName(), reg));
@@ -164,10 +162,10 @@ public class IntermediateCode {
 
     public HashSet<Operand> getUsedSet() {
         HashSet<Operand> usedSet = new HashSet<>();
-        if (source1 != null && source1.isLocal()) {
+        if (source1 != null && source1.isLocalAndVar()) {
             usedSet.add(source1);
         }
-        if (source2 != null && source2.isLocal()) {
+        if (source2 != null && source2.isLocalAndVar()) {
             usedSet.add(source2);
         }
         return usedSet;

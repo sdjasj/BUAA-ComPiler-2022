@@ -31,7 +31,8 @@ public class BlockItemNode extends ParserNode {
         return stmtNode.intFuncHasReturnInTheLastStmt();
     }
 
-    public void generateIntermediate(IntermediateVisitor intermediateVisitor, Pair<String, String> loop) {
+    public void generateIntermediate(IntermediateVisitor intermediateVisitor,
+                                     Pair<String, String> loop) {
         if (isDecl()) {
             declNode.generateIntermediate(intermediateVisitor);
         } else {

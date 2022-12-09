@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import Lexer.Token;
 import MipsCode.MipsVisitor;
+import MipsCode.MulOptimizer;
 import Parser.Parser;
 import MySymbolTable.SymbolTable;
 import SyntaxTree.CompUnitNode;
@@ -54,6 +55,7 @@ public class Compiler {
         intermediateVisitor.output();
 //        intermediateVisitor.testPrint();
 
+        MulOptimizer.init();
         MipsVisitor mipsVisitor = new MipsVisitor();
         intermediateVisitor.IntermediateToMips(mipsVisitor);
         file = new File("mips.txt");

@@ -53,7 +53,7 @@ public class SingleCalculateCode extends IntermediateCode {
 
         String targetReg = null;
         if (target.isGlobal()) {
-            targetReg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor, this);
+            targetReg = registerPool.allocateRegToVarNotLoad(target, varAddressOffset, mipsVisitor, this);
         } else {
             targetReg =
                 registerPool.allocateRegToVarNotLoad(target, varAddressOffset, mipsVisitor, this);
@@ -65,11 +65,6 @@ public class SingleCalculateCode extends IntermediateCode {
             mipsVisitor.addMipsCode(MipsCode.generateSUBU(targetReg, "$0", src1Reg));
         } else if (op == Operator.NOT) {
             mipsVisitor.addMipsCode(new MipsCompareCode("seq", targetReg, src1Reg, "$0"));
-        }
-
-        if (target.isGlobal()) {
-            mipsVisitor.addMipsCode(MipsCode.generateSW(targetReg,
-                String.valueOf(mipsVisitor.getOffsetByVar(target.getName(), 0)), "$gp"));
         }
 
         registerPool.unFreeze(src1Reg);

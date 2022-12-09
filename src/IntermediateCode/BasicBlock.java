@@ -138,6 +138,9 @@ public class BasicBlock {
 
     public void calGenSet() {
         genSet.clear();
+        killSet.clear();
+        reachInSet.clear();
+        reachOutSet.clear();
         for (int i = 0; i < intermediateCodes.size(); i++) {
             IntermediateCode intermediateCode = intermediateCodes.get(i);
             if (intermediateCode instanceof CalculateCode ||
@@ -147,12 +150,15 @@ public class BasicBlock {
                 intermediateCode instanceof InputCode ||
                 intermediateCode instanceof CompareCode ||
                 intermediateCode instanceof DeclCode ||
-                intermediateCode instanceof MemoryCode) {
+                intermediateCode instanceof MemoryCode && intermediateCode.op == Operator.LOAD) {
                 if (!intermediateCode.target.isGlobal()) {
                     genSet.put(intermediateCode.target, intermediateCode);
+//                    System.err.println(intermediateCode.target);
+//                    System.err.println(genSet);
                 }
             }
         }
+//        System.err.println();
     }
 
     public HashMap<Operand, IntermediateCode> getGenSet() {
@@ -179,7 +185,11 @@ public class BasicBlock {
             if (intermediateCode instanceof CalculateCode ||
                 intermediateCode instanceof AssignCode ||
                 intermediateCode instanceof SingleCalculateCode ||
-                intermediateCode instanceof FunctionParam) {
+                intermediateCode instanceof FunctionParam ||
+                intermediateCode instanceof CompareCode ||
+                intermediateCode instanceof DeclCode ||
+                (intermediateCode instanceof MemoryCode && intermediateCode.op == Operator.LOAD)
+                || intermediateCode instanceof InputCode) {
                 if (!intermediateCode.target.isGlobal()) {
                     if (ans.containsKey(intermediateCode.target)) {
                         ans.get(intermediateCode.target).add(intermediateCode);
@@ -192,6 +202,11 @@ public class BasicBlock {
             }
         }
         return ans;
+    }
+
+    public void clearActiveInOutSet() {
+        activeInSet.clear();
+        activeOutSet.clear();
     }
 
     public void calUsedDefSet() {
@@ -239,6 +254,7 @@ public class BasicBlock {
     }
 
     public void calNewActiveOutSet() {
+        activeOutSet.clear();
         for (BasicBlock basicBlock : successor) {
             activeOutSet.addAll(basicBlock.getActiveInSet());
         }
@@ -314,17 +330,17 @@ public class BasicBlock {
         for (int i = intermediateCodes.size() - 1; i > pos; i--) {
             IntermediateCode intermediateCode = intermediateCodes.get(i);
             Operand leftVal = intermediateCode.getLeftVal();
-            if (leftVal != null && (leftVal.isTemp() || leftVal.isLocal())) {
+            if (leftVal != null && (leftVal.isTemp() || leftVal.isLocalAndVar())) {
                 usedTempVars.remove(leftVal);
             }
             Pair<Operand, Operand> rightVals = intermediateCode.getRightVal();
             if (rightVals != null) {
                 Operand operand1 = rightVals.getFirst();
-                if (operand1 != null && (operand1.isTemp() || operand1.isLocal())) {
+                if (operand1 != null && (operand1.isTemp() || operand1.isLocalAndVar())) {
                     usedTempVars.add(operand1);
                 }
                 Operand operand2 = rightVals.getSecond();
-                if (operand2 != null && (operand2.isTemp() || operand2.isLocal())) {
+                if (operand2 != null && (operand2.isTemp() || operand2.isLocalAndVar())) {
                     usedTempVars.add(operand2);
                 }
             }
@@ -377,16 +393,16 @@ public class BasicBlock {
 //                    }
 //                }
             } else {
-                if (leftVal != null && leftVal.isVar()) {
+                if (leftVal != null) {
                     activeSet.remove(leftVal);
                 }
                 if (rightVal != null) {
                     Operand first = rightVal.getFirst();
                     Operand second = rightVal.getSecond();
-                    if (first != null && first.isVar()) {
+                    if (first != null) {
                         activeSet.add(first);
                     }
-                    if (second != null && second.isVar()) {
+                    if (second != null ) {
                         activeSet.add(second);
                     }
                 }

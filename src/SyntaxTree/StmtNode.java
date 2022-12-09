@@ -183,7 +183,7 @@ public class StmtNode extends ParserNode {
                 }
                 String[] outputStrings =
                     formatString.getValue().substring(1, formatString.getValue().length() - 1)
-                        .split("((?<=%d)|(?=%d)|(?<=\\\\n))|(?=\\\\n)");
+                        .split("((?<=%d)|(?=%d))");
                 int idx = 0;
                 for (String outputString : outputStrings) {
                     if (outputString.equals("%d")) {
@@ -206,7 +206,7 @@ public class StmtNode extends ParserNode {
             } else {
                 String[] outputStrings =
                     formatString.getValue().substring(1, formatString.getValue().length() - 1)
-                        .split("((?<=%d)|(?=%d)|(?<=\\\\n))|(?=\\\\n)");
+                        .split("((?<=%d)|(?=%d))");
                 int idx = 0;
                 ArrayList<Operand> expOutputList = new ArrayList<>();
                 for (ExpNode node : formatStringExp) {
@@ -259,8 +259,9 @@ public class StmtNode extends ParserNode {
                 String headLabel = TCode.genNewLable();
                 whileCondNode.generateIntermediate(intermediateVisitor, null, falseLabel);
                 intermediateVisitor.addIntermediateCode(new LabelCode(beginLabel));
-                whileStmtNode.generateIntermediate(intermediateVisitor,
-                    new Pair<>(headLabel, falseLabel));
+                Operand.curLoopDepth++;
+                whileStmtNode.generateIntermediate(intermediateVisitor, new Pair<>(headLabel, falseLabel));
+                Operand.curLoopDepth--;
                 intermediateVisitor.addIntermediateCode(new LabelCode(headLabel));
                 whileCondNode.generateIntermediate(intermediateVisitor, beginLabel, null);
 //            intermediateVisitor.addIntermediateCode(
@@ -271,8 +272,10 @@ public class StmtNode extends ParserNode {
                 String beginLabel = TCode.genNewLable();
                 intermediateVisitor.addIntermediateCode(new LabelCode(beginLabel));
                 whileCondNode.generateIntermediate(intermediateVisitor, null, falseLabel);
+                Operand.curLoopDepth++;
                 whileStmtNode.generateIntermediate(intermediateVisitor,
                     new Pair<>(beginLabel, falseLabel));
+                Operand.curLoopDepth++;
                 intermediateVisitor.addIntermediateCode(
                     new JumpCode(Operand.getNewOperand(beginLabel, Operand.OperandType.ADDRESS),
                         Operator.JUMP));

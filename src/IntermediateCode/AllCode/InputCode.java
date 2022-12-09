@@ -34,15 +34,9 @@ public class InputCode extends IntermediateCode {
         MipsCode mipsCode = MipsCode.generateLi("$v0", "5");
         mipsVisitor.addMipsCode(mipsCode);
         mipsVisitor.addMipsCode(MipsCode.generateSYSCALL());
-        if (target.isGlobal()) {
-            mipsVisitor.addMipsCode(
-                MipsCode.generateSW("$v0", String.valueOf(mipsVisitor.getOffsetByVar(
-                    target.getName(), 0)), "$gp"));
-        } else {
-            String res =
-                registerPool.allocateRegToVarNotLoad(target, varAddressOffset, mipsVisitor, this);
-            mipsVisitor.addMipsCode(MipsCode.generateMOVE(res, "$v0"));
-        }
+        String res =
+            registerPool.allocateRegToVarNotLoad(target, varAddressOffset, mipsVisitor, this);
+        mipsVisitor.addMipsCode(MipsCode.generateMOVE(res, "$v0"));
     }
 
     @Override
