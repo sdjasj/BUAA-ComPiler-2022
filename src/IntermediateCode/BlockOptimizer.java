@@ -626,6 +626,37 @@ public class BlockOptimizer {
                     }
                 }
             }
+
+            for (int i = 0; i < intermediateCodes.size(); i++) {
+                IntermediateCode intermediateCode = intermediateCodes.get(i);
+
+                Operand src1 = intermediateCode.source1;
+                if (src1 != null && src1.isGlobal() && src1.isVar()) {
+                    if (!Optimizer.intermediateVisitor.globalVarIsAssign(src1.getName())) {
+                        intermediateCode.setSource1(Operand.getNewOperand(
+                            String.valueOf(Optimizer.intermediateVisitor.getValOfNonAssignVar(
+                                src1.getName())), Operand.OperandType.NUMBER));
+                        flag = true;
+                    }
+                }
+                Operand src2 = intermediateCode.source2;
+                if (src2 != null && src2.isGlobal() && src2.isVar()) {
+                    if (!Optimizer.intermediateVisitor.globalVarIsAssign(src2.getName())) {
+                        intermediateCode.setSource2(Operand.getNewOperand(
+                            String.valueOf(Optimizer.intermediateVisitor.getValOfNonAssignVar(
+                                src2.getName())), Operand.OperandType.NUMBER));
+                        flag = true;
+                    }
+                }
+
+                Operand target = intermediateCode.target;
+                if (target != null && target.isGlobal() && target.isVar()) {
+                    if (!(intermediateCode instanceof MemoryCode &&
+                        intermediateCode.op == Operator.LOAD)) {
+                        Optimizer.intermediateVisitor.globalVarSetAssign(target.getName());
+                    }
+                }
+            }
         }
         return flag;
     }

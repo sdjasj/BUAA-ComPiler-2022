@@ -47,6 +47,32 @@ public class IntermediateVisitor {
         return Integer.MAX_VALUE;
     }
 
+    public boolean globalVarIsAssign(String name) {
+        for (GlobalDecl globalDecl : globalDecls) {
+            if (globalDecl instanceof GlobalVarDecl && globalDecl.name.equals(name)) {
+                return ((GlobalVarDecl) globalDecl).isAssigned();
+            }
+        }
+        return false;
+    }
+
+    public void globalVarSetAssign(String name) {
+        for (GlobalDecl globalDecl : globalDecls) {
+            if (globalDecl instanceof GlobalVarDecl && globalDecl.name.equals(name)) {
+                ((GlobalVarDecl) globalDecl).setAssigned(true);
+            }
+        }
+    }
+
+    public int getValOfNonAssignVar(String name) {
+        for (GlobalDecl globalDecl : globalDecls) {
+            if (globalDecl instanceof GlobalVarDecl && globalDecl.name.equals(name)) {
+                return ((GlobalVarDecl) globalDecl).getInitVal();
+            }
+        }
+        return Integer.MAX_VALUE;
+    }
+
     public void output() {
         for (GlobalDecl globalDecl : globalDecls) {
             globalDecl.output();
@@ -89,7 +115,6 @@ public class IntermediateVisitor {
                     break;
                 }
             }
-            function.colorAllocate();
         }
     }
 
@@ -122,7 +147,8 @@ public class IntermediateVisitor {
 
         //添加代码
         for (Function function : functions) {
-//            function.resize();
+            function.resize();
+            function.colorAllocate();
             function.toMips(mipsVisitor);
         }
     }

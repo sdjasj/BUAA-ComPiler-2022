@@ -5,6 +5,7 @@ import MipsCode.MipsCode.MipsCode;
 import MipsCode.MipsVisitor;
 import MipsCode.RegisterPool;
 import MipsCode.VarAddressOffset;
+import Tool.Optimizer;
 import Tool.Pair;
 
 import java.util.ArrayList;
