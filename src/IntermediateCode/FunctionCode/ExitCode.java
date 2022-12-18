@@ -41,6 +41,8 @@ public class ExitCode extends IntermediateCode {
             mipsVisitor.addMipsCode(MipsCode.generateLable("fuck" + curFuck));
             mipsVisitor.addMipsCode(new MipsBranchCode("bge", "fuck" + curFuck + 1, "$5", "$4"));
             mipsVisitor.addMipsCode(MipsCode.generateDIV("$4", "$5"));
+            mipsVisitor.addMipsCode(MipsCode.generateDIV("$4", "$5"));
+            mipsVisitor.addMipsCode(MipsCode.generateDIV("$4", "$5"));
             mipsVisitor.addMipsCode(MipsCode.generateADDIU("$5", "$5", "1"));
             mipsVisitor.addMipsCode(MipsCode.generateJ("fuck" + curFuck));
             mipsVisitor.addMipsCode(MipsCode.generateLable("fuck" + curFuck + 1));

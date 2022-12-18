@@ -49,14 +49,14 @@ public class ConstAssignCode extends IntermediateCode {
             return;
         } else {
 //            System.err.println(initVal);
-            for (int i = 0; i < getSize(); i++) {
-                int offset = varAddressOffset.getArrayOffset(target, i);
-                int val = initVal.get(i);
-                MipsCode mipsCode = MipsCode.generateLi(tempReg, String.valueOf(val));
-                mipsVisitor.addMipsCode(mipsCode);
-                mipsCode = MipsCode.generateSW(tempReg, String.valueOf(offset), "$sp");
-                mipsVisitor.addMipsCode(mipsCode);
-            }
+//            for (int i = 0; i < getSize(); i++) {
+//                int offset = varAddressOffset.getArrayOffset(target, i);
+//                int val = initVal.get(i);
+//                MipsCode mipsCode = MipsCode.generateLi(tempReg, String.valueOf(val));
+//                mipsVisitor.addMipsCode(mipsCode);
+//                mipsCode = MipsCode.generateSW(tempReg, String.valueOf(offset), "$sp");
+//                mipsVisitor.addMipsCode(mipsCode);
+//            }
         }
 
         registerPool.unFreeze(tempReg);

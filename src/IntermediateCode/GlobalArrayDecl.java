@@ -17,6 +17,10 @@ public class GlobalArrayDecl extends GlobalDecl {
         this.initVal = initVal;
     }
 
+    public ArrayList<Integer> getInitVal() {
+        return initVal;
+    }
+
     @Override
     public void output() {
         String constDef = "";

@@ -56,12 +56,12 @@ public class FunctionReturnCode extends IntermediateCode {
         }
 
         if (source1 == null) {
-            ArrayList<String> usedGlobalRegs = new ArrayList<>(conflictGraph.getUsedGlobalRegs());
-            for (String usedGlobalReg : usedGlobalRegs) {
-                MipsCode storeUsedGlobalRegs = MipsCode.generateLW(usedGlobalReg,
-                    String.valueOf(varAddressOffset.getRegOffset(usedGlobalReg)), "$sp");
-                mipsVisitor.addMipsCode(storeUsedGlobalRegs);
-            }
+//            ArrayList<String> usedGlobalRegs = new ArrayList<>(conflictGraph.getUsedGlobalRegs());
+//            for (String usedGlobalReg : usedGlobalRegs) {
+//                MipsCode storeUsedGlobalRegs = MipsCode.generateLW(usedGlobalReg,
+//                    String.valueOf(varAddressOffset.getRegOffset(usedGlobalReg)), "$sp");
+//                mipsVisitor.addMipsCode(storeUsedGlobalRegs);
+//            }
 
             if (Optimizer.RaOptimizer && basicBlock.getFunction().isCallOtherFunc()) {
                 mipsVisitor.addMipsCode(
@@ -86,12 +86,12 @@ public class FunctionReturnCode extends IntermediateCode {
             registerPool.unFreeze(targetReg);
         }
 
-        ArrayList<String> usedGlobalRegs = new ArrayList<>(conflictGraph.getUsedGlobalRegs());
-        for (String usedGlobalReg : usedGlobalRegs) {
-            MipsCode storeUsedGlobalRegs = MipsCode.generateLW(usedGlobalReg,
-                String.valueOf(varAddressOffset.getRegOffset(usedGlobalReg)), "$sp");
-            mipsVisitor.addMipsCode(storeUsedGlobalRegs);
-        }
+//        ArrayList<String> usedGlobalRegs = new ArrayList<>(conflictGraph.getUsedGlobalRegs());
+//        for (String usedGlobalReg : usedGlobalRegs) {
+//            MipsCode storeUsedGlobalRegs = MipsCode.generateLW(usedGlobalReg,
+//                String.valueOf(varAddressOffset.getRegOffset(usedGlobalReg)), "$sp");
+//            mipsVisitor.addMipsCode(storeUsedGlobalRegs);
+//        }
 
         if (Optimizer.RaOptimizer && basicBlock.getFunction().isCallOtherFunc()) {
             mipsVisitor.addMipsCode(

@@ -20,6 +20,7 @@ public class AssignCode extends IntermediateCode {
         //comment
         mipsVisitor.addMipsCode(MipsCode.generateComment("assign " + target + " by " + source1));
 
+//        System.err.println(this);
         String src1Reg = getSrcReg(source1, varAddressOffset, mipsVisitor, registerPool);
         String targetReg =
             registerPool.allocateRegToVarNotLoad(target, varAddressOffset,

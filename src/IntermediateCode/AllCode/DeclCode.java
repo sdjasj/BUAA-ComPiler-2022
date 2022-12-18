@@ -24,6 +24,11 @@ public class DeclCode extends IntermediateCode {
         return null;
     }
 
+    @Override
+    public Operand getLeftVal() {
+        return null;
+    }
+
     public int getVarSize() {
         if (dimensions.size() == 0) {
             return 4;
@@ -38,8 +43,10 @@ public class DeclCode extends IntermediateCode {
     @Override
     public void toMips(MipsVisitor mipsVisitor, VarAddressOffset varAddressOffset,
                        RegisterPool registerPool) {
-        String reg =
-            registerPool.allocateRegToVarNotLoad(target, varAddressOffset, mipsVisitor, this);
+        if (target.isAddress()) {
+            String reg =
+                registerPool.allocateRegToVarNotLoad(target, varAddressOffset, mipsVisitor, this);
+        }
     }
 
     @Override

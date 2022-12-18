@@ -74,11 +74,17 @@ public class MulExpNode extends ParserNode {
                                 Integer.parseInt(src2.getName())),
                             Operand.OperandType.NUMBER);
                     } else if (operator == Operator.DIV) {
+                        if (src2.getName().equals("0")) {
+                            return Operand.getNewOperand("0", Operand.OperandType.NUMBER);
+                        }
                         return Operand.getNewOperand(
                             String.valueOf(Integer.parseInt(src1.getName()) /
                                 Integer.parseInt(src2.getName())),
                             Operand.OperandType.NUMBER);
                     } else if (operator == Operator.MOD) {
+                        if (src2.getName().equals("0")) {
+                            return Operand.getNewOperand("0", Operand.OperandType.NUMBER);
+                        }
                         return Operand.getNewOperand(
                             String.valueOf(Integer.parseInt(src1.getName()) %
                                 Integer.parseInt(src2.getName())),
@@ -108,6 +114,13 @@ public class MulExpNode extends ParserNode {
                 }
 
             }
+
+            if (operator == Operator.DIV && src1.getName().equals(src2.getName())) {
+                return Operand.getNewOperand("1", Operand.OperandType.NUMBER);
+            } else if (operator == Operator.MOD && src1.getName().equals(src2.getName())) {
+                return Operand.getNewOperand("0", Operand.OperandType.NUMBER);
+            }
+
 
             CalculateCode calculateCode = new CalculateCode(target, src1, src2, operator);
             intermediateVisitor.addIntermediateCode(calculateCode);

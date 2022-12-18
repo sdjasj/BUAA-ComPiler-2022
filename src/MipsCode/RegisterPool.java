@@ -17,6 +17,7 @@ public class RegisterPool {
     private LinkedList<String> LRUTempRegs;
     private HashSet<String> usedTempRegs;
     private HashSet<String> freezeRegs;
+    private HashSet<String> dirtyOfTempRegs = new HashSet<>();
     public static ArrayList<String> tempRegs = new ArrayList<String>() {
         {
 //            add("$ra");
@@ -46,6 +47,14 @@ public class RegisterPool {
         this.LRUTempRegs = new LinkedList<>();
         this.usedTempRegs = new HashSet<>();
         this.freezeRegs = new HashSet<>();
+    }
+
+    public boolean isDirtyTempReg(String reg) {
+        return dirtyOfTempRegs.contains(reg);
+    }
+
+    public void addDirtyRegs(String reg) {
+        dirtyOfTempRegs.add(reg);
     }
 
     public static void setTempRegs(ArrayList<String> tempRegs) {
@@ -101,7 +110,7 @@ public class RegisterPool {
 //                    System.err.println(varName);
 //                    System.err.println(t);
 //                }
-                if (t > maxv) {
+                if (t > maxv || (t == maxv && varName.isTemp())) {
                     maxv = t;
                     ans = tempReg;
                     ansVar = varName;
@@ -116,9 +125,9 @@ public class RegisterPool {
 //        System.err.println("inter " + intermediateCode.getTarget());
 //        System.err.println(ansVar);
 //        System.err.println(maxv)
-        if (ansVar != null && maxv != Integer.MAX_VALUE) {
-
+        if (ansVar != null && (maxv != Integer.MAX_VALUE || ansVar.isGlobal()) && dirtyOfTempRegs.contains(ans)) {
             ansVar.storeToMemory(mipsVisitor, varAddressOffset, ans);
+            dirtyOfTempRegs.remove(ans);
         }
         return ans;
     }
@@ -362,7 +371,7 @@ public class RegisterPool {
             Operand tempVarName = tempRegToVarMap.get(reg);
             if (tempVarName.isGlobal() || intermediateCode.getBasicBlock()
                 .findUsedVarNextCode(intermediateCode, tempVarName) !=
-                Integer.MAX_VALUE) {
+                Integer.MAX_VALUE && dirtyOfTempRegs.contains(reg)) {
                 tempVarName.storeToMemory(mipsVisitor, varAddressOffset, reg);
             }
             varToTempRegMap.remove(tempVarName);
@@ -383,6 +392,27 @@ public class RegisterPool {
         varToTempRegMap = new HashMap<>();
         LRUTempRegs = new LinkedList<>();
         usedTempRegs = new HashSet<>();
+        freezeRegs = new HashSet<>();
+        dirtyOfTempRegs = new HashSet<>();
+    }
+
+    public void clearWithOutLocal(HashSet<String> regs) {
+        HashSet<String> old = new HashSet<>(dirtyOfTempRegs);
+        old.removeAll(regs);
+        dirtyOfTempRegs.removeAll(old);
+
+        old = new HashSet<>(tempRegToVarMap.keySet());
+        old.removeAll(regs);
+        old.forEach((a) -> tempRegToVarMap.remove(a));
+
+        HashSet<Operand> localVar = new HashSet<>(tempRegToVarMap.values());
+        HashSet<Operand> oldVar = new HashSet<>(varToTempRegMap.keySet());
+        oldVar.removeAll(localVar);
+        oldVar.forEach((a) -> varToTempRegMap.remove(a));
+
+        old = new HashSet<>(usedTempRegs);
+        old.removeAll(regs);
+        usedTempRegs.removeAll(old);
         freezeRegs = new HashSet<>();
     }
 

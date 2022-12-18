@@ -60,6 +60,9 @@ public class RegisterAllocator {
                         minv = curv;
                     }
                 }
+//                System.err.println(node.getName());
+//                System.err.println(edges.get(node).size());
+//                System.err.println(minv);
             } else {
 //                System.err.println(edges.get(node).size());
 //                System.err.println(globalRegs.size());
@@ -72,6 +75,14 @@ public class RegisterAllocator {
                 node.setAllocatedReg(true);
                 stack.add(node);
             }
+//            System.err.println();
+//            nodes.forEach(a -> {
+//                System.err.println(a.getName());
+//                System.err.println(edges.get(a).size());
+//            });
+//            System.err.println();
+//            System.err.println(node.getName());
+//            System.err.println(edges.get(node).size());
             Operand finalNode = node;
             edges.forEach((k, v) -> edges.get(k).remove(finalNode));
             edges.remove(node);

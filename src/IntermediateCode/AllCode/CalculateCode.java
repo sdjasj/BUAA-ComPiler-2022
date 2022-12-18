@@ -174,6 +174,9 @@ public class CalculateCode extends IntermediateCode {
                     mipsVisitor.addMipsCode(mipsCode);
                 }
             } else {
+//                if (source1.isGlobal() || source2.isGlobal()) {
+//                    mipsVisitor.addMipsCode(MipsCode.generateNOP());
+//                }
                 mipsCode = MipsCode.generateMUL(resReg, source1Reg, source2Reg);
                 mipsVisitor.addMipsCode(mipsCode);
             }

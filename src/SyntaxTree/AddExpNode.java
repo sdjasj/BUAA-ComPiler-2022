@@ -89,6 +89,10 @@ public class AddExpNode extends ParserNode {
                 }
             }
 
+            if (operator == Operator.SUB && src1.getName().equals(src2.getName())) {
+                return Operand.getNewOperand("0", Operand.OperandType.NUMBER);
+            }
+
             Operand target = Operand.getNewOperand(TCode.genNewT(), Operand.OperandType.VAR);
             CalculateCode calculateCode = new CalculateCode(target, src1, src2, operator);
             intermediateVisitor.addIntermediateCode(calculateCode);

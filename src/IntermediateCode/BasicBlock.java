@@ -90,6 +90,8 @@ public class BasicBlock {
         return precursor;
     }
 
+
+
     public IntermediateCode getLastCode() {
         return intermediateCodes.get(intermediateCodes.size() - 1);
     }
@@ -355,7 +357,7 @@ public class BasicBlock {
             Operand leftVal = intermediateCode.getLeftVal();
             Pair<Operand, Operand> rightVal = intermediateCode.getRightVal();
             if (leftVal != null && !leftVal.isGlobal() && leftVal.isVar() && !(intermediateCode instanceof InputCode) &&
-                !activeSet.contains(leftVal)) {
+                !activeSet.contains(leftVal) && !(intermediateCode instanceof FunctionParam)) {
                 removeSet.add(i);
 //                HashSet<Operand> waitToDelete = new HashSet<>();
 //                if (rightVal != null) {

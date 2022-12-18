@@ -27,6 +27,26 @@ public class IntermediateVisitor {
         globalDecls.add(globalDecl);
     }
 
+    public boolean arrayIsConst(String name) {
+        for (GlobalDecl globalDecl : globalDecls) {
+            if (globalDecl instanceof GlobalArrayDecl && globalDecl.isConst &&
+                globalDecl.name.equals(name)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public int getValOfConstGlobalArray(String name, int offset) {
+        for (GlobalDecl globalDecl : globalDecls) {
+            if (globalDecl instanceof GlobalArrayDecl && globalDecl.isConst &&
+                globalDecl.name.equals(name)) {
+                return ((GlobalArrayDecl) globalDecl).getInitVal().get(offset / 4);
+            }
+        }
+        return Integer.MAX_VALUE;
+    }
+
     public void output() {
         for (GlobalDecl globalDecl : globalDecls) {
             globalDecl.output();
@@ -58,8 +78,17 @@ public class IntermediateVisitor {
 
     public void optimize() {
         for (Function function : functions) {
-            function.buildBasicBlocks();
-            function.basicBlockOptimize();
+            while (true) {
+//                System.err.println(function.getIntermediateCodes().size());
+                function.buildBasicBlocks();
+//                System.err.println(function.getIntermediateCodes().size());
+//                System.err.println(function.getIntermediateCodes().size());
+                function.basicBlockOptimize();
+                function.setIntermediateCodes(function.getFlowGraph().getInterMediateCodes());
+                if (!function.jumpOptimizer()) {
+                    break;
+                }
+            }
             function.colorAllocate();
         }
     }
@@ -93,6 +122,7 @@ public class IntermediateVisitor {
 
         //添加代码
         for (Function function : functions) {
+//            function.resize();
             function.toMips(mipsVisitor);
         }
     }

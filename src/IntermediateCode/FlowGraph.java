@@ -1,6 +1,7 @@
 package IntermediateCode;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import IntermediateCode.AllCode.BranchCode;
 import IntermediateCode.AllCode.JumpCode;
@@ -16,7 +17,15 @@ public class FlowGraph {
         this.basicBlocks = new ArrayList<>();
     }
 
+    public ArrayList<IntermediateCode> getInterMediateCodes() {
+        ArrayList<IntermediateCode> intermediateCodes = new ArrayList<>();
+        basicBlocks.forEach((a) -> intermediateCodes.addAll(a.getIntermediateCodes()));
+        return intermediateCodes;
+    }
+
     public void buildBasicBlocks(ArrayList<IntermediateCode> intermediateCodes, Function function) {
+        intermediateCodes.forEach((a) -> a.setBasicBlockBegin(false));
+        this.basicBlocks = new ArrayList<>();
         intermediateCodes.get(0).setBasicBlockBegin(true);
         intermediateCodes.get(intermediateCodes.size() - 1).setBasicBlockBegin(true);
         //基本块开头
@@ -39,6 +48,7 @@ public class FlowGraph {
 //                    intermediateCodes.get(k).output();
 //                }
 //                intermediateCode.output();
+//                System.err.println(tag);
                 intermediateCodes.get(j + 1).setBasicBlockBegin(true);
                 int k = i + 1;
                 //跳转下一条语句
@@ -46,10 +56,10 @@ public class FlowGraph {
 //                    intermediateCodes.get(k) instanceof LabelCode) {
 //                    k++;
 //                }
-                intermediateCodes.get(k).setBasicBlockBegin(true);
+                    intermediateCodes.get(k).setBasicBlockBegin(true);
+
             } else if (intermediateCode instanceof FunctionReturnCode ||
                 intermediateCode instanceof ExitCode) {
-
                 intermediateCodes.get(i + 1).setBasicBlockBegin(true);
             }
         }
@@ -113,6 +123,29 @@ public class FlowGraph {
                 }
             }
         }
+        removeUnReachedBlocks(basicBlocks);
+    }
+
+    public void removeUnReachedBlocks(ArrayList<BasicBlock> basicBlocks) {
+        BasicBlock beginBlock = basicBlocks.get(0);
+        HashSet<BasicBlock> reachBlocks = new HashSet<>();
+        dfsForReachedBlock(beginBlock, reachBlocks);
+        ArrayList<BasicBlock> newBlocks = new ArrayList<>();
+        for (int i = 0; i < basicBlocks.size(); i++) {
+            if (reachBlocks.contains(basicBlocks.get(i))) {
+                newBlocks.add(basicBlocks.get(i));
+            }
+        }
+        this.basicBlocks = newBlocks;
+    }
+
+    public void dfsForReachedBlock(BasicBlock basicBlock, HashSet<BasicBlock> reachBlocks) {
+        if (reachBlocks.contains(basicBlock)) {
+            return;
+        }
+        reachBlocks.add(basicBlock);
+        HashSet<BasicBlock> nextBlocks = basicBlock.getSuccessor();
+        nextBlocks.forEach((basicBlock1 -> dfsForReachedBlock(basicBlock1, reachBlocks)));
     }
 
     public ArrayList<BasicBlock> getBasicBlocks() {

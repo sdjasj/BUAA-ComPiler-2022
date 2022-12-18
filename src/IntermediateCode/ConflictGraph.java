@@ -17,6 +17,10 @@ public class ConflictGraph {
         return ans;
     }
 
+    public String getRegOfVar(Operand var) {
+        return usedGlobalRegs.get(var);
+    }
+
     public void addEdge(Operand a, Operand b) {
         if (a.equals(b)) {
             return;
@@ -42,6 +46,10 @@ public class ConflictGraph {
 
     public HashSet<String> getUsedGlobalRegs() {
         return new HashSet<>(usedGlobalRegs.values());
+    }
+
+    public HashSet<Operand> getLocalVarHasReg() {
+        return new HashSet<>(usedGlobalRegs.keySet());
     }
 
     public void testPrint() {

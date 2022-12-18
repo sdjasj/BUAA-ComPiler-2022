@@ -7,6 +7,7 @@ import MipsCode.MipsCode.MipsCode;
 import MipsCode.MipsVisitor;
 import MipsCode.RegisterPool;
 import MipsCode.VarAddressOffset;
+import Tool.Optimizer;
 import Tool.Pair;
 
 import java.util.ArrayList;
@@ -36,7 +37,6 @@ public class FunctionCallCode extends IntermediateCode {
         basicBlock.addUsedTempVarForFunctionCall(usedTempVars, this);
         HashSet<String> regs = new HashSet<>(registerPool.getUsedTempRegs(usedTempVars));
 
-
         for (String reg : regs) {
 //            System.err.println(reg);
 //            System.err.println(registerPool.getVarNameOfTempReg(reg));
@@ -46,7 +46,30 @@ public class FunctionCallCode extends IntermediateCode {
 //                    varAddressOffset.getVarOffset(registerPool.getVarNameOfTempReg(reg))), "$sp");
 //            mipsVisitor.addMipsCode(storeUsedGlobalRegs);
         }
+
+
+        HashSet<Operand> localVarsHasReg = basicBlock.getFunction().getUsedGlobalVar();
+
+
+        HashSet<Operand> activeOutSet = basicBlock.getActiveOutSet();
+        ArrayList<Operand> usedGlobalRegs = new ArrayList<>();
+        for (Operand operand : localVarsHasReg) {
+            if (activeOutSet.contains(operand) ||
+                basicBlock.findUsedVarNextCode(this, operand) != Integer.MAX_VALUE) {
+                operand.storeToMemory(mipsVisitor, varAddressOffset,
+                    conflictGraph.getRegOfVar(operand));
+                usedGlobalRegs.add(operand);
+            }
+        }
+
+
+
         mipsVisitor.addMipsCode(MipsCode.generateJAL(target.getName()));
+
+        for (Operand operand : usedGlobalRegs) {
+            operand.loadToReg(mipsVisitor, varAddressOffset,
+                conflictGraph.getRegOfVar(operand));
+        }
         registerPool.clearAllTempRegs();
     }
 

@@ -165,9 +165,16 @@ public class LValNode extends ParserNode {
 
                 return target;
             } else {
-                //变量数组
+                //常量数组
                 Operand src2 =
                     dimensionOfExp.get(0).generateMidCodeAndReturnTempVar(intermediateVisitor);
+                if (src2.isNUMBER() && item.getType() == SymbolType.CONST_ARRAY) {
+                    ArrayList<Integer> initVals = item.getConstArrayInitVal();
+                    return Operand.getNewOperand(
+                        String.valueOf(initVals.get(Integer.parseInt(src2.getName()))),
+                        Operand.OperandType.NUMBER);
+                }
+                //变量数组
                 if (src2.isNUMBER() && Optimizer.ConstOptimizer) {
                     src2 = Operand.getNewOperand(String.valueOf(Integer.parseInt(src2.getName()) * 4),
                         Operand.OperandType.NUMBER);
@@ -264,6 +271,14 @@ public class LValNode extends ParserNode {
                         calculateCode = new CalculateCode(target, src1, src2, Operator.ADD);
                         intermediateVisitor.addIntermediateCode(calculateCode);
                     }
+                    //常量数组
+                    if (target.isNUMBER() && item.getType() == SymbolType.CONST_ARRAY) {
+                        ArrayList<Integer> initVals = item.getConstArrayInitVal();
+                        return Operand.getNewOperand(
+                            String.valueOf(initVals.get(Integer.parseInt(target.getName()))),
+                            Operand.OperandType.NUMBER);
+                    }
+
                     Operand temp = null;
                     if (target.isNUMBER() && Optimizer.ConstOptimizer) {
                         temp = Operand.getNewOperand(String.valueOf(Integer.parseInt(

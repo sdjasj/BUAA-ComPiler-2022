@@ -34,6 +34,7 @@ public class BranchCode extends IntermediateCode {
     @Override
     public void toMips(MipsVisitor mipsVisitor, VarAddressOffset varAddressOffset,
                        RegisterPool registerPool) {
+//        System.err.println(this);
         String src1Reg = getSrcReg(source1, varAddressOffset, mipsVisitor, registerPool);
 //        if (source1.isNUMBER()) {
 //            src1Reg = registerPool.getTempReg(true, varAddressOffset, mipsVisitor);

@@ -1,17 +1,23 @@
 package MipsCode.MipsCode;
 
+import MipsCode.RegisterPool;
 
 public class MipsCode {
     protected String target;
     protected String source1;
     protected String source2;
     protected String codeName;
+    public static RegisterPool registerPool;
 
     public MipsCode(String codeName, String target, String source1, String source2) {
         this.codeName = codeName;
         this.target = target;
         this.source1 = source1;
         this.source2 = source2;
+    }
+
+    public static void setRegisterPool(RegisterPool registerPool) {
+        MipsCode.registerPool = registerPool;
     }
 
     public String getCodeName() {
@@ -47,7 +53,13 @@ public class MipsCode {
     }
 
     public static MipsCode generateLW(String target, String source1, String source2) {
+        registerPool.addDirtyRegs(target);
         MipsCode mipsCode = new MipsCode("lw", target, source1, source2);
+        return mipsCode;
+    }
+
+    public static MipsCode generateNOP() {
+        MipsCode mipsCode = new MipsCode("nop", null, null, null);
         return mipsCode;
     }
 
@@ -57,12 +69,13 @@ public class MipsCode {
     }
 
     public static MipsCode generateLA(String tag, String target) {
+        registerPool.addDirtyRegs(target);
         MipsCode mipsCode = new MipsCode("la", tag, target, null);
         return mipsCode;
     }
 
     public static MipsCode generateADDIU(String target, String source1, String source2) {
-
+        registerPool.addDirtyRegs(target);
         MipsCode mipsCode = new MipsCode("addiu", target, source1, source2);
         return mipsCode;
     }
@@ -73,26 +86,31 @@ public class MipsCode {
     }
 
     public static MipsCode generateLi(String target, String source1) {
+        registerPool.addDirtyRegs(target);
         MipsCode mipsCode = new MipsCode("li", target, source1, null);
         return mipsCode;
     }
 
     public static MipsCode generateMOVE(String target, String source1) {
+        registerPool.addDirtyRegs(target);
         MipsCode mipsCode = new MipsCode("move", target, source1, null);
         return mipsCode;
     }
 
     public static MipsCode generateADDU(String target, String source1, String source2) {
+        registerPool.addDirtyRegs(target);
         MipsCode mipsCode = new MipsCode("addu", target, source1, source2);
         return mipsCode;
     }
 
     public static MipsCode generateSUBU(String target, String source1, String source2) {
+        registerPool.addDirtyRegs(target);
         MipsCode mipsCode = new MipsCode("subu", target, source1, source2);
         return mipsCode;
     }
 
     public static MipsCode generateSUBIU(String target, String source1, String source2) {
+        registerPool.addDirtyRegs(target);
         MipsCode mipsCode = new MipsCode("subiu", target, source1, source2);
         return mipsCode;
     }
@@ -103,11 +121,13 @@ public class MipsCode {
     }
 
     public static MipsCode generateMFLO(String target) {
+        registerPool.addDirtyRegs(target);
         MipsCode mipsCode = new MipsCode("mflo", target, null, null);
         return mipsCode;
     }
 
     public static MipsCode generateMFHI(String target) {
+        registerPool.addDirtyRegs(target);
         MipsCode mipsCode = new MipsCode("mfhi", target, null, null);
         return mipsCode;
     }
@@ -118,6 +138,7 @@ public class MipsCode {
     }
 
     public static MipsCode generateDIV(String target, String source1, String source2) {
+        registerPool.addDirtyRegs(target);
         MipsCode mipsCode = new MipsCode("div", target, source1, source2);
         return mipsCode;
     }
@@ -153,26 +174,31 @@ public class MipsCode {
     }
 
     public static MipsCode generateMUL(String target, String source1, String source2) {
+        registerPool.addDirtyRegs(target);
         MipsCode mipsCode = new MipsCode("mul", target, source1, source2);
         return mipsCode;
     }
 
     public static MipsCode generateSLL(String target, String source1, String source2) {
+        registerPool.addDirtyRegs(target);
         MipsCode mipsCode = new MipsCode("sll", target, source1, source2);
         return mipsCode;
     }
 
     public static MipsCode generateSRA(String target, String source1, String source2) {
+        registerPool.addDirtyRegs(target);
         MipsCode mipsCode = new MipsCode("sra", target, source1, source2);
         return mipsCode;
     }
 
     public static MipsCode generateSRL(String target, String source1, String source2) {
+        registerPool.addDirtyRegs(target);
         MipsCode mipsCode = new MipsCode("srl", target, source1, source2);
         return mipsCode;
     }
 
     public static MipsCode generateSLT(String target, String source1, String source2) {
+        registerPool.addDirtyRegs(target);
         MipsCode mipsCode = new MipsCode("slt", target, source1, source2);
         return mipsCode;
     }
@@ -233,6 +259,8 @@ public class MipsCode {
             System.out.println("srl " + target + ", " + source1 + ", " + source2);
         } else if (codeName.equals("slt")) {
             System.out.println("slt " + target + ", " + source1 + ", " + source2);
+        } else if (codeName.equals("nop")) {
+            System.out.println("nop");
         }
     }
 }

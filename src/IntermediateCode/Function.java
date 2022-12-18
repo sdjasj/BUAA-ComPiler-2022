@@ -33,6 +33,38 @@ public class Function {
     private RegisterPool registerPool;
     private ConflictGraph conflictGraph;
     private boolean callOtherFunc = false;
+    public static ArrayList<String> regs = new ArrayList<String>() {
+        {
+            //12
+            add("$s0");
+            add("$s1");
+            add("$s2");
+            add("$s3");
+            add("$s4");
+            add("$s5");
+            add("$s6");
+            add("$s7");
+            add("$fp");
+            add("$k0");
+            add("$k1");
+            add("$v1");
+            //15
+            add("$t0");
+            add("$t1");
+            add("$t2");
+            add("$t3");
+            add("$t4");
+            add("$t5");
+            add("$t6");
+            add("$t7");
+            add("$t8");
+            add("$t9");
+            add("$a0");
+            add("$a1");
+            add("$a2");
+            add("$a3");
+        }
+    };
 
     public Function(String name) {
         this.name = name;
@@ -52,6 +84,23 @@ public class Function {
         intermediateCodes.add(intermediateCode);
     }
 
+    public void setIntermediateCodes(
+        ArrayList<IntermediateCode> intermediateCodes) {
+        this.intermediateCodes = intermediateCodes;
+    }
+
+    public HashSet<Operand> getUsedGlobalVar() {
+        return conflictGraph.getLocalVarHasReg();
+    }
+
+    public FlowGraph getFlowGraph() {
+        return flowGraph;
+    }
+
+    public ArrayList<IntermediateCode> getIntermediateCodes() {
+        return intermediateCodes;
+    }
+
     public void setMain(boolean main) {
         isMain = main;
     }
@@ -62,6 +111,19 @@ public class Function {
 
     public String getName() {
         return name;
+    }
+
+    public void resize() {
+        int blockNums = flowGraph.getBasicBlocks().size();
+        RegisterPool.tempRegs.clear();
+        RegisterAllocator.globalRegs.clear();
+        if (blockNums < 1 << 2) {
+            RegisterAllocator.setGlobalRegs(new ArrayList<>(regs.subList(0, 9)));
+            RegisterPool.setTempRegs(new ArrayList<>(regs.subList(9, regs.size())));
+        } else {
+            RegisterAllocator.setGlobalRegs(new ArrayList<>(regs.subList(0, 18)));
+            RegisterPool.setTempRegs(new ArrayList<>(regs.subList(18, regs.size())));
+        }
     }
 
     public void getParamOffset(VarAddressOffset varAddressOffset) {
@@ -78,6 +140,7 @@ public class Function {
         for (IntermediateCode intermediateCode : intermediateCodes) {
             if (intermediateCode instanceof DeclCode) {
                 //局部变量
+                String name = intermediateCode.getTarget().getName();
                 int size = ((DeclCode) intermediateCode).getVarSize();
                 varAddressOffset.addVar(intermediateCode.getTarget(), size);
             }
@@ -109,6 +172,10 @@ public class Function {
         }
     }
 
+    public boolean jumpOptimizer() {
+        return JumpOptimizer.ConstJumpOptimizer(intermediateCodes);
+    }
+
     public HashSet<BasicBlock> connecteBlocks(BasicBlock beginBlock, HashSet<BasicBlock> visited) {
         HashSet<BasicBlock> basicBlocks = beginBlock.getSuccessor();
         HashSet<BasicBlock> ans = new HashSet<>();
@@ -127,14 +194,14 @@ public class Function {
     public void basicBlockOptimize() {
 
 //        System.err.println(name);
-        BlockOptimizer.peepholes(flowGraph);
         while (true) {
-            boolean flag = false;
+            boolean flag = BlockOptimizer.peepholes(flowGraph);
             BlockOptimizer.reachDefineAnalyze(flowGraph);
             flag |= BlockOptimizer.ReplicaPropagation(flowGraph);
             flag |= BlockOptimizer.peepHolesForReWrite(flowGraph);
             BlockOptimizer.activeVarAnalyze(flowGraph);
             flag |= BlockOptimizer.deleteDeadCode(flowGraph);
+
             if (!flag) {
                 break;
             }
@@ -169,6 +236,7 @@ public class Function {
         varAddressOffset = new VarAddressOffset(0);
         registerPool = new RegisterPool();
         ArrayList<BasicBlock> basicBlocks = flowGraph.getBasicBlocks();
+        MipsCode.setRegisterPool(registerPool);
         int cnt = 0;
         for (BasicBlock basicBlock : basicBlocks) {
             mipsVisitor.addMipsCode(MipsCode.generateComment("BasicBlock: " + cnt));
@@ -183,7 +251,8 @@ public class Function {
                     varAddressOffset.addReg("$ra");
                 }
                 //全局寄存器
-                varAddressOffset.addGlobalRegsAddress(conflictGraph);
+//                varAddressOffset.addGlobalRegsAddress(conflictGraph);
+
 //                varAddressOffset.addAllRegs(registerPool);
                 //局部变量 && 临时变量
                 getVarOffset(varAddressOffset);
@@ -203,15 +272,15 @@ public class Function {
                 }
 
                 //现在全局寄存器全存
-                if (!isMain) {
-                    ArrayList<String> usedGlobalRegs = new ArrayList<>(
-                        conflictGraph.getUsedGlobalRegs());
-                    for (String usedGlobalReg : usedGlobalRegs) {
-                        MipsCode storeUsedGlobalRegs = MipsCode.generateSW(usedGlobalReg,
-                            String.valueOf(varAddressOffset.getRegOffset(usedGlobalReg)), "$sp");
-                        mipsVisitor.addMipsCode(storeUsedGlobalRegs);
-                    }
-                }
+//                if (!isMain) {
+//                    ArrayList<String> usedGlobalRegs = new ArrayList<>(
+//                        conflictGraph.getUsedGlobalRegs());
+//                    for (String usedGlobalReg : usedGlobalRegs) {
+//                        MipsCode storeUsedGlobalRegs = MipsCode.generateSW(usedGlobalReg,
+//                            String.valueOf(varAddressOffset.getRegOffset(usedGlobalReg)), "$sp");
+//                        mipsVisitor.addMipsCode(storeUsedGlobalRegs);
+//                    }
+//                }
 
                 for (IntermediateCode intermediateCode : intermediateCodes) {
                     if (intermediateCode instanceof FunctionParam) {
@@ -227,18 +296,17 @@ public class Function {
 
 
             }
-            registerPool.clearAllTempRegs();
             ArrayList<IntermediateCode> intermediateCodes = basicBlock.getIntermediateCodes();
             for (int i = 0; i < intermediateCodes.size(); i++) {
                 IntermediateCode intermediateCode = intermediateCodes.get(i);
                 intermediateCode.setConflictGraph(conflictGraph);
                 if (intermediateCode instanceof BranchCode ||
                     intermediateCode instanceof JumpCode) {
-                    storeRegs(mipsVisitor, basicBlock);
+                    storeRegs(mipsVisitor, basicBlock, intermediateCode);
                     intermediateCode.toMips(mipsVisitor, varAddressOffset, registerPool);
                 } else if (i == intermediateCodes.size() - 1) {
                     intermediateCode.toMips(mipsVisitor, varAddressOffset, registerPool);
-                    storeRegs(mipsVisitor, basicBlock);
+                    storeRegs(mipsVisitor, basicBlock, intermediateCode);
                 } else {
                     intermediateCode.toMips(mipsVisitor, varAddressOffset, registerPool);
                 }
@@ -248,22 +316,30 @@ public class Function {
         }
     }
 
-    public void storeRegs(MipsVisitor mipsVisitor, BasicBlock basicBlock) {
+    public void storeRegs(MipsVisitor mipsVisitor, BasicBlock basicBlock,
+                          IntermediateCode intermediateCode) {
+
 //        ArrayList<String> regs = registerPool.getUsedTempRegs();
         HashSet<Operand> activeVar = basicBlock.getActiveOutSet();
         ArrayList<Operand> varOfRegs = registerPool.getVarInReg();
         HashMap<Operand, String> varToReg = registerPool.getVarToTempRegMap();
         //将还要用到的全局寄存器写回内存
+        HashSet<String> localRegs = new HashSet<>();
         for (Operand varOfReg : varOfRegs) {
-            if (activeVar.contains(varOfReg)) {
+            if (activeVar.contains(varOfReg) && registerPool.isDirtyTempReg(varToReg.get(varOfReg))) {
+//                System.err.println(varOfReg);
                 MipsCode storeUsedGlobalRegs = MipsCode.generateSW(varToReg.get(varOfReg),
                     String.valueOf(
                         varAddressOffset.getVarOffset(varOfReg)), "$sp");
                 mipsVisitor.addMipsCode(storeUsedGlobalRegs);
-            } else if (varOfReg.isGlobal() && varOfReg.isVar()) {
+//                localRegs.add(varToReg.get(varOfReg));
+            } else if (varOfReg.isGlobal() && varOfReg.isVar() &&
+                registerPool.isDirtyTempReg(varToReg.get(varOfReg))) {
                 varOfReg.storeToMemory(mipsVisitor, varAddressOffset, varToReg.get(varOfReg));
             }
         }
+
+//        registerPool.clearWithOutLocal(localRegs);
 
 //        for (String reg : regs) {
 //            MipsCode storeUsedGlobalRegs = MipsCode.generateSW(reg,

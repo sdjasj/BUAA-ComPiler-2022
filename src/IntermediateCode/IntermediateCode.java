@@ -22,12 +22,21 @@ public class IntermediateCode {
     protected BasicBlock basicBlock;
     protected int id = cnt++;
     protected ConflictGraph conflictGraph;
+    protected IntermediateVisitor intermediateVisitor;
 
     public IntermediateCode(Operand target, Operand source1, Operand source2, Operator op) {
         this.target = target;
         this.source1 = source1;
         this.source2 = source2;
         this.op = op;
+    }
+
+    public IntermediateVisitor getIntermediateVisitor() {
+        return intermediateVisitor;
+    }
+
+    public void setIntermediateVisitor(IntermediateVisitor intermediateVisitor) {
+        this.intermediateVisitor = intermediateVisitor;
     }
 
     public void setBasicBlock(BasicBlock basicBlock) {

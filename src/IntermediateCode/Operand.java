@@ -19,6 +19,7 @@ public class Operand {
     private String reg;
     private boolean allocatedReg;
     private boolean global = false;
+    private boolean isConst = false;
     public static int curLoopDepth = 0;
     private int loopDepth = 0;
     private boolean crossBlock = false;
@@ -56,7 +57,15 @@ public class Operand {
     }
 
     public void setLoopDepth(int loopDepth) {
-        this.loopDepth += 1 << loopDepth;
+        this.loopDepth = Math.max(loopDepth, 1 << loopDepth);
+    }
+
+    public boolean isConst() {
+        return isConst;
+    }
+
+    public void setConst(boolean aConst) {
+        isConst = aConst;
     }
 
     public int getLoopDepth() {

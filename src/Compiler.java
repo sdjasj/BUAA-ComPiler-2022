@@ -9,6 +9,7 @@ import MipsCode.MulOptimizer;
 import Parser.Parser;
 import MySymbolTable.SymbolTable;
 import SyntaxTree.CompUnitNode;
+import Tool.Optimizer;
 
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
@@ -42,6 +43,7 @@ public class Compiler {
         parser.setSymbolTable(symbolTable);
         CompUnitNode compUnitNode = parser.parseCompUnit();
         IntermediateVisitor intermediateVisitor = new IntermediateVisitor();
+        Optimizer.intermediateVisitor = intermediateVisitor;
         compUnitNode.generateIntermediate(intermediateVisitor);
         intermediateVisitor.optimize();
 
