@@ -6,6 +6,7 @@ import MipsCode.RegisterPool;
 import MipsCode.VarAddressOffset;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 
 public class IntermediateVisitor {
@@ -25,6 +26,15 @@ public class IntermediateVisitor {
 
     public void addGlobalDecl(GlobalDecl globalDecl) {
         globalDecls.add(globalDecl);
+    }
+
+    public Function getFunctionByName(String name) {
+        for (Function function : functions) {
+            if (function.getName().equals(name)) {
+                return function;
+            }
+        }
+        return null;
     }
 
     public boolean arrayIsConst(String name) {
@@ -147,8 +157,12 @@ public class IntermediateVisitor {
 
         //添加代码
         for (Function function : functions) {
-            function.resize();
+//            function.resize();
             function.colorAllocate();
+//            Collections.shuffle(RegisterAllocator.globalRegs);
+        }
+
+        for (Function function : functions) {
             function.toMips(mipsVisitor);
         }
     }

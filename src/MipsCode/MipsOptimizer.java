@@ -29,20 +29,21 @@ public class MipsOptimizer {
 //                }
 //                continue;
 //            }
-            if (codeType.equals("li")) {
-                int j = i + 1;
-                while (mipsCodes.get(j).getCodeName().equals("comment")) {
-                    j++;
-                }
-                if (j < mipsCodes.size() && mipsCodes.get(j).getCodeName().equals("move")) {
-                    MipsCode mipsCode1 = mipsCodes.get(j);
-                    if (mipsCode1.getSource1().equals(mipsCode.getTarget())) {
-                        mipsCode.setTarget(mipsCode1.getTarget());
-                        mipsCodes.remove(j);
-                    }
-                }
-                continue;
-            }
+            //bug
+//            if (codeType.equals("li")) {
+//                int j = i + 1;
+//                while (mipsCodes.get(j).getCodeName().equals("comment")) {
+//                    j++;
+//                }
+//                if (j < mipsCodes.size() && mipsCodes.get(j).getCodeName().equals("move")) {
+//                    MipsCode mipsCode1 = mipsCodes.get(j);
+//                    if (mipsCode1.getSource1().equals(mipsCode.getTarget())) {
+//                        mipsCode.setTarget(mipsCode1.getTarget());
+//                        mipsCodes.remove(j);
+//                    }
+//                }
+//                continue;
+//            }
             if (codeType.equals("move")) {
                 if (mipsCode.getTarget().equals(mipsCode.getSource1())) {
                     mipsCodes.remove(i);

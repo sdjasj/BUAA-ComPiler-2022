@@ -9,6 +9,7 @@ import IntermediateCode.AllCode.InputCode;
 import IntermediateCode.AllCode.MemoryCode;
 import IntermediateCode.AllCode.SingleCalculateCode;
 import IntermediateCode.FunctionCode.FunctionParam;
+import IntermediateCode.FunctionCode.FunctionReturnCode;
 import MipsCode.MipsCode.MipsCode;
 import Tool.Optimizer;
 import Tool.Pair;
@@ -609,8 +610,19 @@ public class BlockOptimizer {
                             intermediateCode1.op == Operator.DIV &&
                             intermediateCode.target.isTemp()) {
                             if (intermediateCode.target.equals(intermediateCode1.source1)) {
-                                if (intermediateCode.source2.isNUMBER() &&
-                                    intermediateCode1.source2.isNUMBER()) {
+                                if (intermediateCode.source2.isVar() &&
+                                    intermediateCode1.source2.isVar() &&
+                                    intermediateCode.source2.equals(intermediateCode1.source2)) {
+                                    intermediateCode1.setSource2(
+                                        Operand.getNewOperand("1", Operand.OperandType.NUMBER));
+                                    intermediateCode1.setSource1(intermediateCode.source1);
+                                    intermediateCodes.remove(i);
+                                    i--;
+                                    flag = true;
+                                } else if (intermediateCode.source2.isNUMBER() &&
+                                    intermediateCode1.source2.isNUMBER() &&
+                                    Integer.parseInt(intermediateCode.source2.getName()) >=
+                                        Integer.parseInt(intermediateCode1.source2.getName())) {
                                     intermediateCode.setSource2(
                                         Operand.getNewOperand(String.valueOf(
                                                 Integer.parseInt(intermediateCode.source2.getName()) /
@@ -626,34 +638,52 @@ public class BlockOptimizer {
                     }
                 }
             }
+            //bug
+//            for (int i = 0; i < intermediateCodes.size(); i++) {
+//                IntermediateCode intermediateCode = intermediateCodes.get(i);
+//
+//                Operand src1 = intermediateCode.source1;
+//                if (src1 != null && src1.isGlobal() && src1.isVar()) {
+//                    if (!Optimizer.intermediateVisitor.globalVarIsAssign(src1.getName())) {
+//                        intermediateCode.setSource1(Operand.getNewOperand(
+//                            String.valueOf(Optimizer.intermediateVisitor.getValOfNonAssignVar(
+//                                src1.getName())), Operand.OperandType.NUMBER));
+//                        flag = true;
+//                    }
+//                }
+//                Operand src2 = intermediateCode.source2;
+//                if (src2 != null && src2.isGlobal() && src2.isVar()) {
+//                    if (!Optimizer.intermediateVisitor.globalVarIsAssign(src2.getName())) {
+//                        intermediateCode.setSource2(Operand.getNewOperand(
+//                            String.valueOf(Optimizer.intermediateVisitor.getValOfNonAssignVar(
+//                                src2.getName())), Operand.OperandType.NUMBER));
+//                        flag = true;
+//                    }
+//                }
+//
+//                Operand target = intermediateCode.target;
+//                if (target != null && target.isGlobal() && target.isVar()) {
+//                    if (!(intermediateCode instanceof MemoryCode &&
+//                        intermediateCode.op == Operator.LOAD)) {
+//                        Optimizer.intermediateVisitor.globalVarSetAssign(target.getName());
+//                    }
+//                }
+//            }
 
             for (int i = 0; i < intermediateCodes.size(); i++) {
                 IntermediateCode intermediateCode = intermediateCodes.get(i);
-
-                Operand src1 = intermediateCode.source1;
-                if (src1 != null && src1.isGlobal() && src1.isVar()) {
-                    if (!Optimizer.intermediateVisitor.globalVarIsAssign(src1.getName())) {
-                        intermediateCode.setSource1(Operand.getNewOperand(
-                            String.valueOf(Optimizer.intermediateVisitor.getValOfNonAssignVar(
-                                src1.getName())), Operand.OperandType.NUMBER));
-                        flag = true;
-                    }
-                }
-                Operand src2 = intermediateCode.source2;
-                if (src2 != null && src2.isGlobal() && src2.isVar()) {
-                    if (!Optimizer.intermediateVisitor.globalVarIsAssign(src2.getName())) {
-                        intermediateCode.setSource2(Operand.getNewOperand(
-                            String.valueOf(Optimizer.intermediateVisitor.getValOfNonAssignVar(
-                                src2.getName())), Operand.OperandType.NUMBER));
-                        flag = true;
-                    }
-                }
-
-                Operand target = intermediateCode.target;
-                if (target != null && target.isGlobal() && target.isVar()) {
-                    if (!(intermediateCode instanceof MemoryCode &&
-                        intermediateCode.op == Operator.LOAD)) {
-                        Optimizer.intermediateVisitor.globalVarSetAssign(target.getName());
+                if (intermediateCode instanceof CalculateCode &&
+                    !intermediateCode.target.isGlobal()) {
+                    int j = i + 1;
+                    if (j < intermediateCodes.size() &&
+                        intermediateCodes.get(j) instanceof FunctionReturnCode) {
+                        IntermediateCode intermediateCode1 = intermediateCodes.get(j);
+                        if (intermediateCode1.source1 != null &&
+                            intermediateCode.target.equals(intermediateCode1.source1)) {
+                            intermediateCode.setTarget(
+                                Operand.getNewOperand("RET", Operand.OperandType.VAR));
+                            intermediateCode1.setSource1(Operand.getNewOperand("RET", Operand.OperandType.VAR));
+                        }
                     }
                 }
             }

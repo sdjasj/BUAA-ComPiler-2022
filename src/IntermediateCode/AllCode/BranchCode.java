@@ -4,6 +4,7 @@ import IntermediateCode.IntermediateCode;
 import IntermediateCode.Operand;
 import IntermediateCode.Operator;
 import MipsCode.MipsCode.MipsBranchCode;
+import MipsCode.MipsCode.MipsCode;
 import MipsCode.MipsVisitor;
 import MipsCode.RegisterPool;
 import MipsCode.VarAddressOffset;
@@ -35,7 +36,6 @@ public class BranchCode extends IntermediateCode {
     public void toMips(MipsVisitor mipsVisitor, VarAddressOffset varAddressOffset,
                        RegisterPool registerPool) {
 //        System.err.println(this);
-        String src1Reg = getSrcReg(source1, varAddressOffset, mipsVisitor, registerPool);
 //        if (source1.isNUMBER()) {
 //            src1Reg = registerPool.getTempReg(true, varAddressOffset, mipsVisitor);
 //            mipsVisitor.addMipsCode(MipsCode.generateLi(src1Reg, source1.getName()));
@@ -47,19 +47,7 @@ public class BranchCode extends IntermediateCode {
 //                registerPool.allocateRegToVarLoad(source1.getName(), varAddressOffset, mipsVisitor);
 //        }
 
-        String src2Reg = null;
-        if (source2 != null) {
-//            if (source2.isNUMBER()) {
-//                src2Reg = source2.getName();
-//            } else if (mipsVisitor.varIsGlobal(source2.getName())) {
-//                src2Reg = registerPool.getTempReg(false, varAddressOffset, mipsVisitor);
-//                mipsVisitor.addMipsCode(MipsCode.generateLW(src2Reg, source2.getName(), "$0"));
-//            } else {
-//                src2Reg =
-//                    registerPool.allocateRegToVarLoad(source2.getName(), varAddressOffset, mipsVisitor);
-//            }
-            src2Reg = getSrcReg(source2, varAddressOffset, mipsVisitor, registerPool);
-        }
+
 
 //        BEQ,
 //        BNE,
@@ -72,23 +60,91 @@ public class BranchCode extends IntermediateCode {
         String mipsOp = null;
         if (op == Operator.BEQ) {
             mipsOp = "beq";
+            String src1Reg = getSrcReg(source1, varAddressOffset, mipsVisitor, registerPool);
+            String src2Reg = null;
+            if (source2 != null) {
+                src2Reg = getSrcReg(source2, varAddressOffset, mipsVisitor, registerPool);
+            }
+            mipsVisitor.addMipsCode(new MipsBranchCode(mipsOp, target.getName(), src1Reg, src2Reg));
+            registerPool.unFreeze(src1Reg);
+            registerPool.unFreeze(src2Reg);
         } else if (op == Operator.BNE) {
             mipsOp = "bne";
+            String src1Reg = getSrcReg(source1, varAddressOffset, mipsVisitor, registerPool);
+            String src2Reg = null;
+            if (source2 != null) {
+                src2Reg = getSrcReg(source2, varAddressOffset, mipsVisitor, registerPool);
+            }
+            mipsVisitor.addMipsCode(new MipsBranchCode(mipsOp, target.getName(), src1Reg, src2Reg));
+            registerPool.unFreeze(src1Reg);
+            registerPool.unFreeze(src2Reg);
         } else if (op == Operator.BGE) {
             mipsOp = "bge";
+            String src1Reg = getSrcReg(source1, varAddressOffset, mipsVisitor, registerPool);
+            String src2Reg = null;
+            if (source2 != null) {
+                src2Reg = getSrcReg(source2, varAddressOffset, mipsVisitor, registerPool);
+            }
+            mipsVisitor.addMipsCode(new MipsBranchCode(mipsOp, target.getName(), src1Reg, src2Reg));
+            registerPool.unFreeze(src1Reg);
+            registerPool.unFreeze(src2Reg);
         } else if (op == Operator.BLE) {
             mipsOp = "ble";
+            String src1Reg = getSrcReg(source1, varAddressOffset, mipsVisitor, registerPool);
+            String src2Reg = null;
+            if (source2 != null) {
+                src2Reg = getSrcReg(source2, varAddressOffset, mipsVisitor, registerPool);
+            }
+            mipsVisitor.addMipsCode(new MipsBranchCode(mipsOp, target.getName(), src1Reg, src2Reg));
+            registerPool.unFreeze(src1Reg);
+            registerPool.unFreeze(src2Reg);
         } else if (op == Operator.BLT) {
             mipsOp = "blt";
+            if (source2.isNUMBER() && Integer.parseInt(source2.getName()) <= 32767 && Integer.parseInt(source2.getName()) >= -32768) {
+                String src1Reg = getSrcReg(source1, varAddressOffset, mipsVisitor, registerPool);
+                mipsVisitor.addMipsCode(MipsCode.generateSLTI("$1", src1Reg, source2.getName()));
+                mipsVisitor.addMipsCode(new MipsBranchCode("bne", target.getName(), "$1", "$0"));
+                registerPool.unFreeze(src1Reg);
+            } else {
+                String src1Reg = getSrcReg(source1, varAddressOffset, mipsVisitor, registerPool);
+                String src2Reg = null;
+                if (source2 != null) {
+                    src2Reg = getSrcReg(source2, varAddressOffset, mipsVisitor, registerPool);
+                }
+                mipsVisitor.addMipsCode(new MipsBranchCode(mipsOp, target.getName(), src1Reg, src2Reg));
+                registerPool.unFreeze(src1Reg);
+                registerPool.unFreeze(src2Reg);
+            }
         } else if (op == Operator.BGT) {
             mipsOp = "bgt";
+                String src1Reg = getSrcReg(source1, varAddressOffset, mipsVisitor, registerPool);
+                String src2Reg = null;
+                if (source2 != null) {
+                    src2Reg = getSrcReg(source2, varAddressOffset, mipsVisitor, registerPool);
+                }
+                mipsVisitor.addMipsCode(new MipsBranchCode(mipsOp, target.getName(), src1Reg, src2Reg));
+                registerPool.unFreeze(src1Reg);
+                registerPool.unFreeze(src2Reg);
         } else if (op == Operator.BEQZ) {
             mipsOp = "beqz";
+            String src1Reg = getSrcReg(source1, varAddressOffset, mipsVisitor, registerPool);
+            String src2Reg = null;
+            if (source2 != null) {
+                src2Reg = getSrcReg(source2, varAddressOffset, mipsVisitor, registerPool);
+            }
+            mipsVisitor.addMipsCode(new MipsBranchCode(mipsOp, target.getName(), src1Reg, src2Reg));
+            registerPool.unFreeze(src1Reg);
+            registerPool.unFreeze(src2Reg);
         } else if (op == Operator.BNEZ) {
             mipsOp = "bnez";
+            String src1Reg = getSrcReg(source1, varAddressOffset, mipsVisitor, registerPool);
+            String src2Reg = null;
+            if (source2 != null) {
+                src2Reg = getSrcReg(source2, varAddressOffset, mipsVisitor, registerPool);
+            }
+            mipsVisitor.addMipsCode(new MipsBranchCode(mipsOp, target.getName(), src1Reg, src2Reg));
+            registerPool.unFreeze(src1Reg);
+            registerPool.unFreeze(src2Reg);
         }
-        mipsVisitor.addMipsCode(new MipsBranchCode(mipsOp, target.getName(), src1Reg, src2Reg));
-        registerPool.unFreeze(src1Reg);
-        registerPool.unFreeze(src2Reg);
     }
 }

@@ -58,6 +58,12 @@ public class MipsCode {
         return mipsCode;
     }
 
+    public static MipsCode generateSLTI(String target, String source1, String source2) {
+        registerPool.addDirtyRegs(target);
+        MipsCode mipsCode = new MipsCode("slti", target, source1, source2);
+        return mipsCode;
+    }
+
     public static MipsCode generateNOP() {
         MipsCode mipsCode = new MipsCode("nop", null, null, null);
         return mipsCode;
@@ -261,6 +267,8 @@ public class MipsCode {
             System.out.println("slt " + target + ", " + source1 + ", " + source2);
         } else if (codeName.equals("nop")) {
             System.out.println("nop");
+        } else if (codeName.equals("slti")) {
+            System.out.println("slti " + target + ", " + source1 + ", " + source2);
         }
     }
 }

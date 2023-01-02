@@ -384,6 +384,9 @@ public class RegisterPool {
         if (operand.isAllocatedReg()) {
             return operand.getReg();
         }
+        if (operand.getName().equals("RET")) {
+            return "$v0";
+        }
         return allocateTempRegToVar(operand, varAddressOffset, mipsVisitor, intermediateCode,false);
     }
 

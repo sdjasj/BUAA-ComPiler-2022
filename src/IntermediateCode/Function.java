@@ -84,6 +84,10 @@ public class Function {
         intermediateCodes.add(intermediateCode);
     }
 
+    public HashSet<String> getUsedGlobalRegs() {
+        return conflictGraph.getUsedGlobalRegs();
+    }
+
     public void setIntermediateCodes(
         ArrayList<IntermediateCode> intermediateCodes) {
         this.intermediateCodes = intermediateCodes;
@@ -251,7 +255,7 @@ public class Function {
                     varAddressOffset.addReg("$ra");
                 }
                 //全局寄存器
-//                varAddressOffset.addGlobalRegsAddress(conflictGraph);
+                varAddressOffset.addGlobalRegsAddress(conflictGraph);
 
 //                varAddressOffset.addAllRegs(registerPool);
                 //局部变量 && 临时变量
@@ -272,15 +276,15 @@ public class Function {
                 }
 
                 //现在全局寄存器全存
-//                if (!isMain) {
-//                    ArrayList<String> usedGlobalRegs = new ArrayList<>(
-//                        conflictGraph.getUsedGlobalRegs());
-//                    for (String usedGlobalReg : usedGlobalRegs) {
-//                        MipsCode storeUsedGlobalRegs = MipsCode.generateSW(usedGlobalReg,
-//                            String.valueOf(varAddressOffset.getRegOffset(usedGlobalReg)), "$sp");
-//                        mipsVisitor.addMipsCode(storeUsedGlobalRegs);
-//                    }
-//                }
+                if (!isMain) {
+                    ArrayList<String> usedGlobalRegs = new ArrayList<>(
+                        conflictGraph.getUsedGlobalRegs());
+                    for (String usedGlobalReg : usedGlobalRegs) {
+                        MipsCode storeUsedGlobalRegs = MipsCode.generateSW(usedGlobalReg,
+                            String.valueOf(varAddressOffset.getRegOffset(usedGlobalReg)), "$sp");
+                        mipsVisitor.addMipsCode(storeUsedGlobalRegs);
+                    }
+                }
 
                 for (IntermediateCode intermediateCode : intermediateCodes) {
                     if (intermediateCode instanceof FunctionParam) {

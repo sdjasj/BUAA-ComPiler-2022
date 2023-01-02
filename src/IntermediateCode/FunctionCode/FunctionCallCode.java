@@ -36,6 +36,8 @@ public class FunctionCallCode extends IntermediateCode {
         HashSet<Operand> usedTempVars = new HashSet<>();
         basicBlock.addUsedTempVarForFunctionCall(usedTempVars, this);
         HashSet<String> regs = new HashSet<>(registerPool.getUsedTempRegs(usedTempVars));
+        HashSet<String> calleeGlobalRegs = Optimizer.intermediateVisitor.getFunctionByName(
+            target.getName()).getUsedGlobalRegs();
 
         for (String reg : regs) {
 //            System.err.println(reg);
@@ -48,28 +50,28 @@ public class FunctionCallCode extends IntermediateCode {
         }
 
 
-        HashSet<Operand> localVarsHasReg = basicBlock.getFunction().getUsedGlobalVar();
-
-
-        HashSet<Operand> activeOutSet = basicBlock.getActiveOutSet();
-        ArrayList<Operand> usedGlobalRegs = new ArrayList<>();
-        for (Operand operand : localVarsHasReg) {
-            if (activeOutSet.contains(operand) ||
-                basicBlock.findUsedVarNextCode(this, operand) != Integer.MAX_VALUE) {
-                operand.storeToMemory(mipsVisitor, varAddressOffset,
-                    conflictGraph.getRegOfVar(operand));
-                usedGlobalRegs.add(operand);
-            }
-        }
+//        HashSet<Operand> localVarsHasReg = basicBlock.getFunction().getUsedGlobalVar();
+//
+//
+//        HashSet<Operand> activeOutSet = basicBlock.getActiveOutSet();
+//        ArrayList<Operand> usedGlobalRegs = new ArrayList<>();
+//        for (Operand operand : localVarsHasReg) {
+//            if ((activeOutSet.contains(operand) ||
+//                basicBlock.findUsedVarNextCode(this, operand) != Integer.MAX_VALUE)) {
+//                operand.storeToMemory(mipsVisitor, varAddressOffset,
+//                    conflictGraph.getRegOfVar(operand));
+//                usedGlobalRegs.add(operand);
+//            }
+//        }
 
 
 
         mipsVisitor.addMipsCode(MipsCode.generateJAL(target.getName()));
 
-        for (Operand operand : usedGlobalRegs) {
-            operand.loadToReg(mipsVisitor, varAddressOffset,
-                conflictGraph.getRegOfVar(operand));
-        }
+//        for (Operand operand : usedGlobalRegs) {
+//            operand.loadToReg(mipsVisitor, varAddressOffset,
+//                conflictGraph.getRegOfVar(operand));
+//        }
         registerPool.clearAllTempRegs();
     }
 
